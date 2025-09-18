@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpStatus, HttpException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
@@ -7,8 +7,9 @@ import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
 @Injectable()
 export class UsuariosService {
-  constructor(
-    @InjectRepository(Usuario)
+  private usuarios : Usuario[] = [];
+
+  constructor(@InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
@@ -28,20 +29,65 @@ export class UsuariosService {
 
   // Crear un nuevo usuario
   public async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
-    const nuevoUsuario = this.usuarioRepository.create(createUsuarioDto);
-    return await this.usuarioRepository.save(nuevoUsuario);
+    try {     
+      let usuario : Usuario = await this.usuarioRepository.save( new Usuario (createUsuarioDto.tipoUsuario_id, createUsuarioDto.usuario, createUsuarioDto.activo) );
+
+      if (usuario)
+        return await this.usuarioRepository.save(usuario);
+      else 
+        //throw new Exception('No se pudo crear el usuario');
+        console.log('Error!!!!!!!!! No se pudo crear el usuario');
+        throw new BadRequestException('No se pudo crear el usuario');
+
+    } catch (error) {        
+        throw new HttpException( { status : HttpStatus.NOT_FOUND, 
+        error : 'Error en la creacion del usuario ' + error}, HttpStatus.NOT_FOUND );      
+    }
   }
 
-  // Actualizar un usuario
+  // Actualizar un usuario  
   public async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
-    const usuario = await this.findOne(id);
-    const usuarioActualizado = Object.assign(usuario, updateUsuarioDto);
-    return await this.usuarioRepository.save(usuarioActualizado);
+    try {
+      let usuario = await this.findOne(id);
+
+      if (updateUsuarioDto.tipoUsuario_id !== undefined) {
+        usuario.setTipoUsuario_id(updateUsuarioDto.tipoUsuario_id);
+      }
+      if (updateUsuarioDto.usuario !== undefined) {
+        usuario.setUsuario(updateUsuarioDto.usuario);
+      }
+      if (updateUsuarioDto.activo!== undefined) {
+        usuario.setActivo(updateUsuarioDto.activo);
+      }
+      usuario = await this.usuarioRepository.save(usuario);
+      
+      if (!usuario)
+        throw new BadRequestException('No se pudo modificar el usuario');
+      else        
+        return usuario;
+        
+    } catch (error) {
+      throw new HttpException( { status : HttpStatus.NOT_FOUND,
+      error : 'Error en la actualización del usuario ' + error}, HttpStatus.NOT_FOUND);
+    }
   }
+
 
   // Eliminar un usuario
-  public async remove(id: number): Promise<void> {
-    const usuario = await this.findOne(id);
-    await this.usuarioRepository.remove(usuario);
+  public async delete(id : number) : Promise<boolean> {
+    try {
+      let usuario = await this.findOne(id);    
+      
+      if (!usuario)
+        throw new BadRequestException('No se encuentra el usuario');
+      else
+        await this.usuarioRepository.delete({usuario_id:id});
+        return true;
+    } catch (error) {
+      throw new HttpException( { status : HttpStatus.NOT_FOUND,
+      error : 'Error en la eliminación del usuario ' + error}, HttpStatus.NOT_FOUND);
+    }
   }
+
 }
+

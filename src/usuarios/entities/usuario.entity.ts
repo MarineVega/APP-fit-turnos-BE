@@ -29,8 +29,8 @@ export class Usuario {
         private activo: boolean;
 
 
-    constructor (usuario_id: number, tipoUsuario_id: number, usuario: string, activo: boolean) {
-        this.usuario_id = usuario_id;
+    constructor (/*usuario_id: number,*/ tipoUsuario_id: number, usuario: string, activo: boolean) {
+      //  this.usuario_id = usuario_id;
         this.tipoUsuario_id = tipoUsuario_id;
         this.usuario = usuario;
         this.activo = activo;
@@ -65,7 +65,7 @@ export class Usuario {
     }
 
     public setActivo(activo: boolean): void {
-        this.activo = this.activo;
+        this.activo = activo;
     }
 
 }
