@@ -1,0 +1,16 @@
+{
+  "usuarios": [
+    {
+      "id": 1,
+      "tipoUsuario_id": 1,
+      "usuario": "Natalia",
+      "activo": true
+    },
+    {
+      "id": 2,
+      "tipoUsuario_id": 1,
+      "usuario": "Mariné",
+      "activo": true
+    }
+  ] 
+}
