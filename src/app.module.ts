@@ -13,7 +13,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: '75JbujHB3',
+      password: 'root',
       database: 'fit_turnos', 
       entities:[
         "dist/**/**.entity{.ts,.js}"
