@@ -5,6 +5,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { ActividadesModule } from './actividades/actividades.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     }),
     ServeStaticModule.forRoot({ rootPath: join(__dirname,'..','client') }),
     UsuariosModule,
+    ActividadesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
