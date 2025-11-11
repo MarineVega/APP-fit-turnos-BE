@@ -5,11 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Actividad } from './entities/actividad.entity';
 
 @Module({
-  imports:[
-    TypeOrmModule.forFeature([
-      Actividad
-    ])
-  ],
+  imports:[TypeOrmModule.forFeature([Actividad])],
   controllers: [ActividadesController],
   providers: [ActividadesService],
 })

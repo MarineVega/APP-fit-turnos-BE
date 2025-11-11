@@ -11,6 +11,11 @@ async function bootstrap() {
     credentials: true,
   });
 
+  /*
+  app.enableCors({
+    origin: ['https://miappfitturnos.com', 'http://localhost:5173'],
+  });
+*/
   //await app.listen(process.env.PORT ?? 3000);
   await app.listen(3000);
   console.log('🚀 Backend corriendo en http://localhost:3000');
