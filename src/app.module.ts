@@ -6,6 +6,7 @@ import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { ActividadesModule } from './actividades/actividades.module';
+import { HorariosModule } from './horarios/horarios.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ActividadesModule } from './actividades/actividades.module';
     ServeStaticModule.forRoot({ rootPath: join(__dirname,'..','client') }),
     UsuariosModule,
     ActividadesModule,
+    HorariosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,5 +1,5 @@
-import { stringify } from "querystring";
-import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+//import { stringify } from "querystring";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
 
 @Entity('actividades')
 export class Actividad {    
@@ -13,17 +13,22 @@ export class Actividad {
     @Column({ name: 'descripcion', length: 100 })
         private descripcion: string;
     
-    @Column({ name: 'cupoMaximo' })
+    @Column({ name: 'cupoMaximo', type: 'int' })
         private cupoMaximo: number;
         
     @Column({ name: 'imagen', length: 100 })
         private imagen: string;
 
-    @Column({ name: 'activa', type: 'boolean' })
+    @Column({ name: 'activa', type: 'boolean', default: true })
         private activa: boolean;
 
-
-    constructor (nombre: string, descripcion: string, cupoMaximo: number, imagen: string, activa: boolean) {
+    constructor (
+        nombre: string, 
+        descripcion: string, 
+        cupoMaximo: number, 
+        imagen: string, 
+        activa: boolean
+    ) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.cupoMaximo = cupoMaximo;

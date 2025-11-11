@@ -13,12 +13,12 @@ export class ActividadesService {
     private readonly actividadRepository: Repository<Actividad>,
   ) {}
 
-  // Obtener todos las actividades
+  // Obtengo todos las actividades
   public async findAll(): Promise<Actividad[]> {
     return await this.actividadRepository.find();
   }
 
-  // Obtener una actividad por ID
+  // Obtengo una actividad por ID
   public async findOne(id: number): Promise<Actividad> {
     const actividad = await this.actividadRepository.findOne({ where: { actividad_id: id } });
     if (!actividad) {
@@ -27,7 +27,7 @@ export class ActividadesService {
     return actividad;
   }
 
-  // Crear una nueva actividad
+  // Creo una nueva actividad
   public async create(createActividadDto: CreateActividadDto): Promise<Actividad> {
     try {     
       let actividad : Actividad = await this.actividadRepository.save( 
