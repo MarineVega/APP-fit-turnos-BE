@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class ActividadesService {
-  private actividades : Actividad[] = [];
+  //private actividades : Actividad[] = [];
 
   constructor(@InjectRepository(Actividad)
     private readonly actividadRepository: Repository<Actividad>,
