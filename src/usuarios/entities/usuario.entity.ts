@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Persona } from './persona.entity'; // ✅ ajustá la ruta si tu entidad está en otra carpeta
 
-@Entity('usuario')
+@Entity('usuarios')
 export class Usuario {
   @PrimaryGeneratedColumn()
   usuario_id: number;
