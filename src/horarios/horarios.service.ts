@@ -31,7 +31,7 @@ export class HorariosService {
     //return await this.horarioRepository.find();
 
     const horarios = await this.horarioRepository.find({
-    relations: ['actividad', 'hora'],           // omito 'profesor' por ahora
+      relations: ['actividad', 'hora'],           // omito 'profesor' por ahora
     });
 
     // harcodeo un "nombre de profesor" para no romper el front
@@ -58,7 +58,7 @@ export class HorariosService {
   // Creo un nuevo horario
   public async create(createHorarioDto: CreateHorarioDto): Promise<Horario> {
     try {
-      const { actividad_id, profesor_id, hora_id, cupoMaximo, activo } = createHorarioDto;
+      const { actividad_id, profesor_id, dias, hora_id, cupoMaximo, activo } = createHorarioDto;
 
       const actividad = await this.actividadRepository.findOne({ where: { actividad_id } });
       if (!actividad) throw new BadRequestException(`Actividad con id ${actividad_id} no encontrada.`);
@@ -66,10 +66,22 @@ export class HorariosService {
       const profesor = await this.profesorRepository.findOne({ where: { profesor_id } });
       if (!profesor) throw new BadRequestException(`Profesor con id ${profesor_id} no encontrado.`);
 
+      if (!dias || dias.trim() === "") {
+        throw new BadRequestException("Debe seleccionar al menos un día.");
+      }
+
       const hora = await this.horaRepository.findOne({ where: { hora_id } });
       if (!hora) throw new BadRequestException(`Hora con id ${hora_id} no encontrada.`);
 
-      const nuevoHorario = new Horario(actividad, profesor, hora, cupoMaximo ?? null, activo);
+      const nuevoHorario = new Horario(
+        actividad, 
+        profesor, 
+        dias.toLowerCase().trim(),    // lo guardo en minúsculas y sin esapacios en los extremos
+        hora, 
+        cupoMaximo ?? null, 
+        activo
+      );
+
       const horario = await this.horarioRepository.save(nuevoHorario);
 
       if (!horario) {

@@ -23,6 +23,8 @@ export class Horario {
     @JoinColumn({ name: 'profesor_id' })
     private profesor: Profesor | null;
 
+    @Column({ name: 'dias_id', length: 100, nullable: false })
+        private dias: string;
 
     @ManyToOne(() => Hora, { eager: true })
     @JoinColumn({ name: 'hora_id' })
@@ -37,12 +39,14 @@ export class Horario {
     constructor (
         actividad: Actividad,
         profesor: Profesor,
+        dias: string ,
         hora: Hora,
         cupoMaximo: number | null, 
         activo: boolean
     ) {
         this.actividad = actividad;
         this.profesor = profesor;
+        this.dias = dias;
         this.hora = hora;
         this.cupoMaximo = cupoMaximo;        
         this.activo = activo;
@@ -81,6 +85,18 @@ export class Horario {
 
     public setProfesor(profesor: Profesor | null): void {
         this.profesor = profesor;
+    }
+
+    public getDias(): string {
+        return this.dias;
+    }
+
+    public setDias(dias: string): void {
+        // Normalizo el formato al guardar
+        this.dias = dias
+            .split(',')
+            .map(d => d.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")) // quita tildes
+            .join(',');
     }
 
     public getHora(): Hora {

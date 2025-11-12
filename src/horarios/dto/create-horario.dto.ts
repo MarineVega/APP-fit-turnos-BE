@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, Min, Max } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, Min, Max, IsString } from 'class-validator';
 //npm install class-validator class-transformer
 
 export class CreateHorarioDto {
@@ -9,6 +9,10 @@ export class CreateHorarioDto {
   @IsInt()
   @IsOptional()
   profesor_id?: number;     // opcional
+
+  @IsString()
+  @IsNotEmpty({ message: 'El campo días es obligatorio.' })
+  dias: string;
 
   @IsInt()
   @IsNotEmpty({ message: 'El campo hora_id es obligatorio.' })

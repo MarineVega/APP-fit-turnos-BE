@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateHorarioDto } from './create-horario.dto';
-import { IsOptional, IsInt, IsBoolean, Min, Max } from 'class-validator';
+import { IsOptional, IsInt, IsBoolean, Min, Max, IsString } from 'class-validator';
 
 export class UpdateHorarioDto extends PartialType(CreateHorarioDto) {
   @IsOptional()
@@ -10,6 +10,10 @@ export class UpdateHorarioDto extends PartialType(CreateHorarioDto) {
   @IsOptional()
   @IsInt()
   profesor_id?: number;
+
+  @IsOptional()
+  @IsString()
+  dias?: string;
 
   @IsOptional()
   @IsInt()
