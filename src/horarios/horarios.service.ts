@@ -76,7 +76,7 @@ export class HorariosService {
       const nuevoHorario = new Horario(
         actividad, 
         profesor, 
-        dias.toLowerCase().trim(),    // lo guardo en minúsculas y sin esapacios en los extremos
+        dias.toLowerCase().trim(),    // lo guardo en minúsculas y sin esapacios en los extremos        
         hora, 
         cupoMaximo ?? null, 
         activo
@@ -117,6 +117,23 @@ export class HorariosService {
         if (!profesor) throw new BadRequestException(`Profesor con id ${updateHorarioDto.profesor_id} no encontrado.`);
         horario.setProfesor(profesor);
       }
+
+      if (updateHorarioDto.dias !== undefined) {
+        let diasFormateados: string;
+
+        if (Array.isArray(updateHorarioDto.dias)) {
+          // Si viene como array ["lunes","jueves"]
+          diasFormateados = updateHorarioDto.dias.join(",");
+        } else if (typeof updateHorarioDto.dias === "string") {
+          // Si ya viene como string "lunes,jueves"
+          diasFormateados = updateHorarioDto.dias;
+        } else {
+          throw new BadRequestException("Formato inválido para días.");
+        }
+
+        horario.setDias(diasFormateados);
+      }
+
 
       if (updateHorarioDto.hora_id !== undefined) {
         const hora = await this.horaRepository.findOne({ where: { hora_id: updateHorarioDto.hora_id } });
