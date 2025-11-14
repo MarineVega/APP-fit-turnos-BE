@@ -45,4 +45,13 @@ export class UsuariosController {
   remove(@Param('id') id: number) {
     return this.usuariosService.remove(+id);
   }
+
+  // 🟢 NUEVO: Cambiar contraseña
+  @Put(':id/password')
+  cambiarPassword(
+    @Param('id') id: number,
+    @Body() body: { actual: string; nueva: string },
+  ) {
+    return this.usuariosService.cambiarPassword(+id, body.actual, body.nueva);
+  }
 }

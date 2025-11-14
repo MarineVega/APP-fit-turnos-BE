@@ -5,6 +5,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module'; // 👈 agregá esto
 
 @Module({
   imports: [
@@ -14,14 +15,15 @@ import { UsuariosModule } from './usuarios/usuarios.module';
       port: 3306,
       username: 'root',
       password: 'root',
-      database: 'fit_turnos', 
-      entities:[
-        "dist/**/**.entity{.ts,.js}"
-      ],
-      synchronize: false
+      database: 'fit_turnos',
+      entities: ["dist/**/**.entity{.ts,.js}"],
+      synchronize: false,
     }),
-    ServeStaticModule.forRoot({ rootPath: join(__dirname,'..','client') }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client'),
+    }),
     UsuariosModule,
+    AuthModule, // 👈 y agregalo también acá
   ],
   controllers: [AppController],
   providers: [AppService],
