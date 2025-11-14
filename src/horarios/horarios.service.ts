@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateHorarioDto } from './dto/create-horario.dto';
@@ -10,8 +10,7 @@ import { Hora } from 'src/horas/entities/hora.entity';
 
 @Injectable()
 export class HorariosService {
-  private horarios: Horario[] = [];
-
+  
   constructor(
     @InjectRepository(Horario)
     private readonly horarioRepository: Repository<Horario>,
@@ -26,12 +25,20 @@ export class HorariosService {
     private readonly horaRepository: Repository<Hora>,
   ) {}
 
+  private tienenDiasEnComun(diasA: string, diasB: string): boolean {
+    const arrA = diasA.split(',').map(d => d.trim().toLowerCase());
+    const arrB = diasB.split(',').map(d => d.trim().toLowerCase());
+
+    return arrA.some(d => arrB.includes(d));      // true → hay coincidencia
+  }
+
   // Obtengo todos los horarios
   public async findAll(): Promise<Horario[]> {
     //return await this.horarioRepository.find();
 
     const horarios = await this.horarioRepository.find({
       relations: ['actividad', 'hora'],           // omito 'profesor' por ahora
+      //relations: ['actividad', 'profesor', 'hora']
     });
 
     // harcodeo un "nombre de profesor" para no romper el front
@@ -39,7 +46,7 @@ export class HorariosService {
       ...h,
       profesor: {
         profesor_id: h.getProfesor()?.profesor_id ?? 0,
-        nombre: 'Profe',
+        nombre: 'Prueba',
         apellido: 'Demo',
       },
     })) as any;
@@ -49,6 +56,7 @@ export class HorariosService {
   // Obtengo un horario por ID
   public async findOne(id: number): Promise<Horario> {
     const horario = await this.horarioRepository.findOne({ where: { horario_id: id } });
+    
     if (!horario) {
       throw new NotFoundException(`Horario con id ${id} no encontrado`);
     }
@@ -58,13 +66,51 @@ export class HorariosService {
   // Creo un nuevo horario
   public async create(createHorarioDto: CreateHorarioDto): Promise<Horario> {
     try {
+
+      const horariosExistentes = await this.horarioRepository.find({
+        relations: ['actividad', 'profesor', 'hora']
+      });
+
+      for (const h of horariosExistentes) {
+        const mismaActividad = h.getActividad().actividad_id === createHorarioDto.actividad_id;
+
+        const mismoProfesor =
+          (h.getProfesor() === null && !createHorarioDto.profesor_id) ||
+          (h.getProfesor()?.profesor_id === createHorarioDto.profesor_id);
+
+        const mismaHora = h.getHora().hora_id === createHorarioDto.hora_id;
+
+        if (mismaActividad && mismoProfesor && mismaHora) {
+          const diasNormalizados = createHorarioDto.dias
+          .split(',')
+          .map(d => d.trim().toLowerCase())
+          .join(','); 
+
+          if (this.tienenDiasEnComun(h.getDias(), diasNormalizados)) {
+            throw new BadRequestException(
+              `Ya existe un horario con misma actividad, profesor, hora y días superpuestos.`
+            );
+          }
+        }
+      }
+
       const { actividad_id, profesor_id, dias, hora_id, cupoMaximo, activo } = createHorarioDto;
 
       const actividad = await this.actividadRepository.findOne({ where: { actividad_id } });
       if (!actividad) throw new BadRequestException(`Actividad con id ${actividad_id} no encontrada.`);
 
+      /*
       const profesor = await this.profesorRepository.findOne({ where: { profesor_id } });
       if (!profesor) throw new BadRequestException(`Profesor con id ${profesor_id} no encontrado.`);
+      */
+      let profesor: Profesor | null = null;
+
+      if (profesor_id) {
+        profesor = await this.profesorRepository.findOne({ where: { profesor_id } });
+        if (!profesor) {
+          throw new BadRequestException(`Profesor con id ${profesor_id} no encontrado.`);
+        }
+      }
 
       if (!dias || dias.trim() === "") {
         throw new BadRequestException("Debe seleccionar al menos un día.");
@@ -73,16 +119,16 @@ export class HorariosService {
       const hora = await this.horaRepository.findOne({ where: { hora_id } });
       if (!hora) throw new BadRequestException(`Hora con id ${hora_id} no encontrada.`);
 
-      const nuevoHorario = new Horario(
-        actividad, 
-        profesor, 
-        dias.toLowerCase().trim(),    // lo guardo en minúsculas y sin esapacios en los extremos        
-        hora, 
-        cupoMaximo ?? null, 
-        activo
+      let horario : Horario = await this.horarioRepository.save(
+        new Horario (
+          actividad, 
+          profesor, 
+          dias.toLowerCase().trim(),    // lo guardo en minúsculas y sin esapacios en los extremos        
+          hora, 
+          cupoMaximo ?? null, 
+          activo
+        )
       );
-
-      const horario = await this.horarioRepository.save(nuevoHorario);
 
       if (!horario) {
         throw new BadRequestException('No se pudo crear el horario.');
@@ -91,12 +137,9 @@ export class HorariosService {
       return horario;
 
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: 'Error en la creación del horario: ' + error,
-        },
-        HttpStatus.BAD_REQUEST,
+      if (error instanceof HttpException) throw error;      
+      throw new InternalServerErrorException(
+          "Ocurrió un error inesperado al crear el horario."
       );
     }
   }
@@ -104,17 +147,71 @@ export class HorariosService {
   // Actualizo un horario existente
   public async update(id: number, updateHorarioDto: UpdateHorarioDto): Promise<Horario> {
     try {
+
+      const horariosExistentes = await this.horarioRepository.find({
+        relations: ['actividad', 'profesor', 'hora']
+      });
+
+      for (const h of horariosExistentes) {
+        if (h.horario_id === id) continue; // saltar este mismo
+
+        const mismaActividad = 
+          (updateHorarioDto.actividad_id ?? h.getActividad().actividad_id) === h.getActividad().actividad_id;
+
+        const profIdNuevo = updateHorarioDto.profesor_id ?? h.getProfesor()?.profesor_id ?? null;
+        const profIdExistente = h.getProfesor()?.profesor_id ?? null;
+
+        const mismoProfesor =
+          (profIdNuevo === null && profIdExistente === null) ||
+          profIdNuevo === profIdExistente;
+
+        const mismaHora =
+          (updateHorarioDto.hora_id ?? h.getHora().hora_id) === h.getHora().hora_id;
+
+        const diasNuevos = updateHorarioDto.dias
+          ? updateHorarioDto.dias
+            .split(',')
+            .map(d => d.trim().toLowerCase())
+            .join(',')
+          : h.getDias();
+
+        if (mismaActividad && mismoProfesor && mismaHora) {
+          if (this.tienenDiasEnComun(h.getDias(), diasNuevos)) {
+            throw new BadRequestException(
+              `Ya existe otro horario con misma actividad, profesor, hora y días superpuestos.`
+            );
+          }
+        }
+      }
+
       let horario = await this.findOne(id);
+      if (!horario) throw new BadRequestException('No se encuentra el horario');
 
       if (updateHorarioDto.actividad_id !== undefined) {
         const actividad = await this.actividadRepository.findOne({ where: { actividad_id: updateHorarioDto.actividad_id } });
         if (!actividad) throw new BadRequestException(`Actividad con id ${updateHorarioDto.actividad_id} no encontrada.`);
         horario.setActividad(actividad);
       }
-
+/*
       if (updateHorarioDto.profesor_id !== undefined) {
         const profesor = await this.profesorRepository.findOne({ where: { profesor_id: updateHorarioDto.profesor_id } });
         if (!profesor) throw new BadRequestException(`Profesor con id ${updateHorarioDto.profesor_id} no encontrado.`);
+        horario.setProfesor(profesor);
+      }
+*/
+      if ('profesor_id' in updateHorarioDto) {
+        let profesor: Profesor | null = null;
+
+        if (updateHorarioDto.profesor_id) {
+          profesor = await this.profesorRepository.findOne({
+            where: { profesor_id: updateHorarioDto.profesor_id },
+          });
+
+          if (!profesor) {
+            throw new BadRequestException(`Profesor con id ${updateHorarioDto.profesor_id} no encontrado.`);
+          }
+        }
+
         horario.setProfesor(profesor);
       }
 
@@ -156,13 +253,13 @@ export class HorariosService {
       else
         return horario;
 
-    } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.BAD_REQUEST,
-          error: 'Error en la actualización del horario: ' + error,
-        },
-        HttpStatus.BAD_REQUEST,
+    } catch (error) {      
+      console.error("ERROR EN update():", error);
+
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        "Ocurrió un error inesperado al modificar el horario."
       );
     }
   }
@@ -177,13 +274,13 @@ export class HorariosService {
       return true;
 
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'Error en la eliminación del horario: ' + error,
-        },
-        HttpStatus.NOT_FOUND,
-      );
+       console.error("ERROR EN delete():", error);
+
+        if (error instanceof HttpException) throw error;
+
+        throw new InternalServerErrorException(
+          "Ocurrió un error inesperado al eliminar el horario."
+        );
     }
   }
 }

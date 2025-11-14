@@ -38,7 +38,7 @@ export class Horario {
 
     constructor (
         actividad: Actividad,
-        profesor: Profesor,
+        profesor: Profesor | null,
         dias: string ,
         hora: Hora,
         cupoMaximo: number | null, 

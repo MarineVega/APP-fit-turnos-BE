@@ -54,12 +54,12 @@ export class ActividadesService {
         ) 
       );
 
-      if (actividad)
-        return actividad;
-      else         
-        console.log('Error!!!!!!!!! No se pudo crear la actividad');
+      if (!actividad){
         throw new BadRequestException('No se pudo crear la actividad');
+      }
 
+      return actividad;
+    
     } catch (error) { 
       console.error("ERROR EN create():", error);
 
@@ -74,7 +74,10 @@ export class ActividadesService {
   // Actualizar una actividad
   public async update(id: number, updateActividadDto: UpdateActividadDto): Promise<Actividad> {
     try {
-      
+
+      let actividad = await this.findOne(id);
+      if (!actividad) throw new BadRequestException('No se encuentra la actividad');
+
       // Validación de nombre duplicado
       if (updateActividadDto.nombre) {
         const yaExiste = await this.actividadRepository.findOne({
@@ -87,8 +90,6 @@ export class ActividadesService {
           );
         }
       }
-
-      let actividad = await this.findOne(id);
 
       if (updateActividadDto.nombre !== undefined) {
         actividad.setNombre(updateActividadDto.nombre);
@@ -126,8 +127,9 @@ export class ActividadesService {
   // Eliminar una actividad
   public async delete(id : number) : Promise<boolean> {
     try {
-      //let actividad = await this.findOne(id);    
-      
+      const actividad = await this.findOne(id);
+      if (!actividad) throw new BadRequestException('No se encuentra la actividad');
+
       await this.actividadRepository.delete({actividad_id:id});
       return true;
 
