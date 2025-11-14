@@ -1,14 +1,7 @@
 import { IsString, IsNotEmpty, Length, IsInt, Min, Max, IsOptional, IsBoolean } from "class-validator";
 
 export class CreateActividadDto {
-    /*
-    readonly nombre : string;
-    readonly descripcion : string;
-    readonly cupoMaximo : number;
-    readonly imagen : string;
-    readonly activa : boolean;
-    */
-
+  
     @IsString()
     @IsNotEmpty({ message: 'El nombre es obligatorio.' })
     @Length(3, 50, { message: 'El nombre debe tener entre 3 y 50 caracteres.' })
@@ -31,5 +24,4 @@ export class CreateActividadDto {
 
     @IsBoolean()
     readonly activa: boolean;
-
 }

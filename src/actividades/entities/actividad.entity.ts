@@ -1,6 +1,5 @@
 //import { stringify } from "querystring";
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
-
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 @Entity('actividades')
 export class Actividad {    
   
@@ -8,7 +7,7 @@ export class Actividad {
         actividad_id: number;
 
     @Column({ name: 'nombre', length: 50 })
-        private nombre: string;
+        nombre: string;
 
     @Column({ name: 'descripcion', length: 100 })
         private descripcion: string;

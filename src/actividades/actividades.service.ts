@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateActividadDto } from './dto/create-actividad.dto';
 import { UpdateActividadDto } from './dto/update-actividad.dto';
 import { Actividad } from './entities/actividad.entity';
@@ -7,9 +7,9 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class ActividadesService {
-  //private actividades : Actividad[] = [];
-
-  constructor(@InjectRepository(Actividad)
+  
+  constructor(
+    @InjectRepository(Actividad)
     private readonly actividadRepository: Repository<Actividad>,
   ) {}
 
@@ -21,6 +21,7 @@ export class ActividadesService {
   // Obtengo una actividad por ID
   public async findOne(id: number): Promise<Actividad> {
     const actividad = await this.actividadRepository.findOne({ where: { actividad_id: id } });
+
     if (!actividad) {
       throw new NotFoundException(`Actividad con id ${id} no encontrada`);
     }
@@ -29,7 +30,20 @@ export class ActividadesService {
 
   // Creo una nueva actividad
   public async create(createActividadDto: CreateActividadDto): Promise<Actividad> {
-    try {     
+
+    try {
+
+       // Validación de nombre duplicado
+      const yaExiste = await this.actividadRepository.findOne({
+        where: { nombre: createActividadDto.nombre.trim() }
+      });
+
+      if (yaExiste) {
+        throw new BadRequestException(
+          `Ya existe una actividad con el nombre "${createActividadDto.nombre}".`
+        );
+      }
+
       let actividad : Actividad = await this.actividadRepository.save( 
         new Actividad (
           createActividadDto.nombre, 
@@ -41,20 +55,39 @@ export class ActividadesService {
       );
 
       if (actividad)
-        return await this.actividadRepository.save(actividad);
+        return actividad;
       else         
         console.log('Error!!!!!!!!! No se pudo crear la actividad');
         throw new BadRequestException('No se pudo crear la actividad');
 
-    } catch (error) {        
-        throw new HttpException( { status : HttpStatus.NOT_FOUND, 
-        error : 'Error en la creacion de la actividad ' + error}, HttpStatus.NOT_FOUND );      
+    } catch (error) { 
+      console.error("ERROR EN create():", error);
+
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        "Ocurrió un error inesperado al crear la actividad."
+      );    
     }
   }
 
   // Actualizar una actividad
   public async update(id: number, updateActividadDto: UpdateActividadDto): Promise<Actividad> {
     try {
+      
+      // Validación de nombre duplicado
+      if (updateActividadDto.nombre) {
+        const yaExiste = await this.actividadRepository.findOne({
+          where: { nombre: updateActividadDto.nombre.trim() }
+        });
+
+        if (yaExiste && yaExiste.actividad_id !== id) {
+          throw new BadRequestException(
+            `Ya existe otra actividad con el nombre "${updateActividadDto.nombre}".`
+          );
+        }
+      }
+
       let actividad = await this.findOne(id);
 
       if (updateActividadDto.nombre !== undefined) {
@@ -80,24 +113,32 @@ export class ActividadesService {
         return actividad;
         
     } catch (error) {
-      throw new HttpException( { status : HttpStatus.NOT_FOUND,
-      error : 'Error en la actualización de la actividad ' + error}, HttpStatus.NOT_FOUND);
+      console.error("ERROR EN update():", error);
+
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        "Ocurrió un error inesperado al modificar la actividad."
+      );
     }
   }
     
   // Eliminar una actividad
   public async delete(id : number) : Promise<boolean> {
     try {
-      let actividad = await this.findOne(id);    
+      //let actividad = await this.findOne(id);    
       
-      if (!actividad)
-        throw new BadRequestException('No se encuentra la actividad');
-      else
-        await this.actividadRepository.delete({actividad_id:id});
-        return true;
+      await this.actividadRepository.delete({actividad_id:id});
+      return true;
+
     } catch (error) {
-      throw new HttpException( { status : HttpStatus.NOT_FOUND,
-      error : 'Error en la eliminación de la actividad ' + error}, HttpStatus.NOT_FOUND);
+      console.error("ERROR EN delete():", error);
+
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        "Ocurrió un error inesperado al eliminar la actividad."
+      );
     }
   }
 
