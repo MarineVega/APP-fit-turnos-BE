@@ -25,11 +25,24 @@ export class AuthController {
     return req.user;
   }
 
-  // ✅ Cambiar contraseña (protegido)
+  // 🔐 Cambiar contraseña estando autenticado
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
-  async changePassword(@Req() req, @Body() body: { currentPassword: string; newPassword: string }) {
+  async changePassword(
+    @Req() req,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
     const usuarioId = req.user?.usuario_id;
-    return this.authService.changePassword(usuarioId, body.currentPassword, body.newPassword);
+    return this.authService.changePassword(
+      usuarioId,
+      body.currentPassword,
+      body.newPassword,
+    );
+  }
+
+  // 🔓 Restablecer contraseña con email (sin autenticación)
+  @Post('reset-password')
+  async resetPassword(@Body() body: { email: string; password: string }) {
+    return this.authService.resetPassword(body.email, body.password);
   }
 }

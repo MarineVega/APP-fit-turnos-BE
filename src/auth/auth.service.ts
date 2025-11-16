@@ -10,7 +10,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // ✅ Login: busca usuario y genera token
+  // 🔐 Login
   async login(email: string, password: string) {
     const user = await this.usuariosService.findByEmail(email, true);
     if (!user) throw new UnauthorizedException('Usuario no encontrado');
@@ -25,19 +25,18 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload);
-
     const { password: _pwd, ...usuarioSeguro } = user as any;
     return { access_token: token, usuario: usuarioSeguro };
   }
 
-  // ✅ Registro de usuario: hashea la contraseña antes de guardar
+  // 🟢 Registro: encripta contraseña
   async register(data: any) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const usuarioConHash = { ...data, password: hashedPassword };
     return this.usuariosService.create(usuarioConHash);
   }
 
-  // ✅ Validar usuario desde token
+  // 🧪 Validar usuario desde token
   async validarUsuario(token: string) {
     try {
       const decoded = this.jwtService.verify(token);
@@ -47,12 +46,8 @@ export class AuthService {
     }
   }
 
-  // ✅ Cambiar contraseña
-  async changePassword(
-    usuarioId: number,
-    actual: string,
-    nueva: string,
-  ) {
+  // 🔐 Cambiar contraseña estando autenticado
+  async changePassword(usuarioId: number, actual: string, nueva: string) {
     const usuario = await this.usuariosService.findByIdWithPassword(usuarioId);
 
     if (!usuario) {
@@ -60,7 +55,6 @@ export class AuthService {
     }
 
     const passwordValida = await bcrypt.compare(actual, usuario.password);
-
     if (!passwordValida) {
       throw new UnauthorizedException('La contraseña actual es incorrecta');
     }
@@ -69,5 +63,19 @@ export class AuthService {
     await this.usuariosService.updatePassword(usuarioId, hashed);
 
     return { message: 'Contraseña actualizada correctamente' };
+  }
+
+  // 🔓 Restablecer contraseña sin autenticación
+  async resetPassword(email: string, password: string) {
+    const usuario = await this.usuariosService.findByEmail(email, true);
+
+    if (!usuario) {
+      throw new UnauthorizedException('No se encontró un usuario con ese email');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await this.usuariosService.updatePassword(usuario.usuario_id, hashedPassword);
+
+    return { message: 'Contraseña restablecida correctamente' };
   }
 }
