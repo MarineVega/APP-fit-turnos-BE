@@ -36,14 +36,14 @@ export class ProfesoresService {
     return this.profesorRepository.save(profesor);
   }
 
-  // 📌 Traer todos los profesores con la persona asociada
+  // Traer todos los profesores con la persona asociada
   async findAll() {
   return this.profesorRepository.find({
     relations: ['persona'], // trae también el estado de activo
     order: { profesor_id: 'ASC' }, // opcional: ordenado por ID
   });
 }
- // 📌 Actualizar Profesor + datos de Persona (incluido activo)
+ // Actualizar Profesor + datos de Persona (incluido activo)
 async update(id: number, dto: UpdateProfesorDto) {
   const profesor = await this.profesorRepository.findOne({
     where: { profesor_id: id },
@@ -77,7 +77,7 @@ async update(id: number, dto: UpdateProfesorDto) {
   return this.profesorRepository.save(profesor);
 }
 
-  // 🗑 Baja lógica -> se marca la persona como inactiva
+  // Baja lógica -> se marca la persona como inactiva
   async remove(id: number) {
     const profesor = await this.profesorRepository.findOne({
       where: { profesor_id: id },

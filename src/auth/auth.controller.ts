@@ -18,14 +18,14 @@ export class AuthController {
     return this.authService.login(data.email, data.password);
   }
 
-  // ✅ Validar token y usuario activo
+  //  Validar token y usuario activo
   @UseGuards(JwtAuthGuard)
   @Get('perfil')
   async perfil(@Req() req) {
     return req.user;
   }
 
-  // 🔐 Cambiar contraseña estando autenticado
+  // Cambiar contraseña estando autenticado
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
   async changePassword(
@@ -40,7 +40,7 @@ export class AuthController {
     );
   }
 
-  // 🔓 Restablecer contraseña con email (sin autenticación)
+  // Restablecer contraseña con email (sin autenticación)
   @Post('reset-password')
   async resetPassword(@Body() body: { email: string; password: string }) {
     return this.authService.resetPassword(body.email, body.password);

@@ -10,7 +10,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // 🔐 Login
+  //  Login
   async login(email: string, password: string) {
     const user = await this.usuariosService.findByEmail(email, true);
     if (!user) throw new UnauthorizedException('Usuario no encontrado');
@@ -29,14 +29,14 @@ export class AuthService {
     return { access_token: token, usuario: usuarioSeguro };
   }
 
-  // 🟢 Registro: encripta contraseña
+  //  Registro: encripta contraseña
   async register(data: any) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const usuarioConHash = { ...data, password: hashedPassword };
     return this.usuariosService.create(usuarioConHash);
   }
 
-  // 🧪 Validar usuario desde token
+  //  Validar usuario desde token
   async validarUsuario(token: string) {
     try {
       const decoded = this.jwtService.verify(token);
@@ -46,7 +46,7 @@ export class AuthService {
     }
   }
 
-  // 🔐 Cambiar contraseña estando autenticado
+  //  Cambiar contraseña estando autenticado
   async changePassword(usuarioId: number, actual: string, nueva: string) {
     const usuario = await this.usuariosService.findByIdWithPassword(usuarioId);
 
@@ -65,7 +65,7 @@ export class AuthService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
-  // 🔓 Restablecer contraseña sin autenticación
+  //  Restablecer contraseña sin autenticación
   async resetPassword(email: string, password: string) {
     const usuario = await this.usuariosService.findByEmail(email, true);
 

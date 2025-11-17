@@ -19,5 +19,5 @@ export class CreateProfesorDto {
 
   @IsOptional()
   @IsBoolean()
-  activo?: boolean = true; // 👈 nuevo campo, por defecto queda activo
+  activo?: boolean = true; //  este campo luego se actualiza en persona, por defecto queda activo
 }
