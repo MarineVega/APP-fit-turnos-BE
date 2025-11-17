@@ -13,11 +13,11 @@ export class Horario {
     @JoinColumn({ name: 'actividad_id' })           // Especifico el nombre de la columna FK en la tabla horarios
         private actividad: Actividad;
 
-        /*
+    /*
     @ManyToOne(() => Profesor, { eager: true })
     @JoinColumn({ name: 'profesor_id' })
         private profesor: Profesor;
-*/
+    */
     //mocke o “harcodeo” los datos de Profesor para que el sistema no intente hacer el JOIN automáticamente
     @ManyToOne(() => Profesor, { eager: false, nullable: true })
     @JoinColumn({ name: 'profesor_id' })
@@ -48,7 +48,7 @@ export class Horario {
         this.profesor = profesor;
         this.dias = dias;
         this.hora = hora;
-        this.cupoMaximo = cupoMaximo;        
+        this.cupoMaximo = cupoMaximo;
         this.activo = activo;
     }
 
