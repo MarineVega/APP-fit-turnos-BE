@@ -6,6 +6,10 @@ import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // 🔹 Import ConfigModule
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { ActividadesModule } from './actividades/actividades.module';
+import { HorariosModule } from './horarios/horarios.module';
+import { HorasModule } from './horas/horas.module';
+import { ReservasModule } from './reservas/reservas.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfesoresModule } from './profesores/profesores.module';
 
@@ -32,6 +36,10 @@ import { ProfesoresModule } from './profesores/profesores.module';
       rootPath: join(__dirname, '..', 'client'),
     }),
     UsuariosModule,
+    ActividadesModule,
+    HorariosModule,
+    HorasModule,
+    ReservasModule,
     AuthModule,
     ProfesoresModule,
   ],
