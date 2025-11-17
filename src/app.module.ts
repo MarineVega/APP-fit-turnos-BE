@@ -4,35 +4,46 @@ import { AppService } from './app.service';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // 🔹 Import ConfigModule
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { ActividadesModule } from './actividades/actividades.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { HorasModule } from './horas/horas.module';
 import { ReservasModule } from './reservas/reservas.module';
+import { AuthModule } from './auth/auth.module';
+import { ProfesoresModule } from './profesores/profesores.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: '75JbujHB3',
-      database: 'fit_turnos', 
-      entities:[
-        "dist/**/**.entity{.ts,.js}"
-      ],
-      synchronize: false
+    ConfigModule.forRoot({
+      isGlobal: true, // 🔹 Habilita variables env en toda la app
     }),
-    ServeStaticModule.forRoot({ rootPath: join(__dirname,'..','client') }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('DB_HOST'),
+        port: Number(configService.get<string>('DB_PORT')),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        entities: ["dist/**/**.entity{.ts,.js}"],
+        synchronize: false, // ⚠ esto debe quedar en false en producción
+      }),
+      inject: [ConfigService],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client'),
+    }),
     UsuariosModule,
     ActividadesModule,
     HorariosModule,
     HorasModule,
     ReservasModule,
+    AuthModule,
+    ProfesoresModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-
