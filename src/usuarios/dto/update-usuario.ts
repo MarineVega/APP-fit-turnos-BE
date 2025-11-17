@@ -5,48 +5,12 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  Length,
   MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-class UpdatePersonaDto {
-  @IsOptional()
-  @IsNumber()
-  persona_id?: number;
-
-  @IsOptional()
-  @IsString()
-  nombre?: string;
-
-  @IsOptional()
-  @IsString()
-  apellido?: string;
-
-  @IsOptional()
-  @IsString()
-  documento?: string;
-
-  @IsOptional()
-  @IsString()
-  telefono?: string;
-
-  @IsOptional()
-  @IsString()
-  domicilio?: string;
-
-  @IsOptional()
-  @IsString()
-  fecha_nac?: string;
-
-  @IsOptional()
-  @IsNumber()
-  tipoPersona_id?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  activo?: boolean;
-}
+import { UpdatePersonaDto } from './update-persona';
 
 export class UpdateUsuarioDto {
   @IsOptional()
@@ -55,6 +19,7 @@ export class UpdateUsuarioDto {
 
   @IsOptional()
   @IsString()
+  @Length(3, 50)
   usuario?: string;
 
   @IsOptional()
@@ -62,7 +27,7 @@ export class UpdateUsuarioDto {
   email?: string;
 
   @IsOptional()
-  @MinLength(6)
+  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   @IsString()
   password?: string;
 
