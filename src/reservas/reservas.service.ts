@@ -2,7 +2,7 @@ import { BadRequestException, HttpException, Injectable, InternalServerErrorExce
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateReservaDto } from './dto/create-reserva.dto';
-import { UpdateReservaDto } from './dto/update-reserva.dto';
+//import { UpdateReservaDto } from './dto/update-reserva.dto';
 import { Reserva } from './entities/reserva.entity';
 import { Actividad } from 'src/actividades/entities/actividad.entity';
 import { Profesor } from 'src/profesores/entities/profesor.entity';
@@ -34,19 +34,11 @@ export class ReservasService {
     public async findAll(): Promise<Reserva[]> {
     
     const reservas = await this.reservaRepository.find({
-      relations: ['actividad', 'horario'],           // omito profesor y cliente por ahora
-      //relations: ['actividad', 'profesor', 'cliente', 'horario']
+      //relations: ['actividad', 'horario'],           // omito profesor y cliente por ahora
+      relations: ['actividad', 'profesor', 'cliente', 'horario']
     });
 
-    // harcodeo un "nombre de profesor" para no romper el front
-    return reservas.map((h) => ({
-      ...h,
-      profesor: {
-        profesor_id: h.getProfesor()?.profesor_id ?? 0,
-        nombre: 'Prueba',
-        apellido: 'Demo',
-      },
-    })) as any;
+    return reservas;
   }
 
   // Obtengo una reserva por ID
@@ -74,9 +66,18 @@ export class ReservasService {
       const actividad = await this.actividadRepository.findOne({ where: { actividad_id } });
       if (!actividad) throw new BadRequestException(`Actividad con id ${actividad_id} no encontrada.`);
       
+      let profesor: Profesor | null = null;
+
+      if (profesor_id) {
+        profesor = await this.profesorRepository.findOne({ where: { profesor_id } });
+        if (!profesor) {
+          throw new BadRequestException(`Profesor con id ${profesor_id} no encontrado.`);
+        }
+      }
+      /*
       const profesor = await this.profesorRepository.findOne({ where: { profesor_id } });
       if (!profesor) throw new BadRequestException(`Profesor con id ${profesor_id} no encontrado.`);
-
+*/
       const cliente = await this.clienteRepository.findOne({ where: { cliente_id } });
       if (!cliente) throw new BadRequestException(`Cliente con id ${cliente_id} no encontrado.`);
 

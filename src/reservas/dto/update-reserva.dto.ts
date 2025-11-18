@@ -21,7 +21,7 @@ export class UpdateReservaDto extends PartialType(CreateReservaDto) {
 
     @IsOptional()
     @IsDate()
-    fecha?: Date;
+    fecha?: string;
 
     @IsOptional()
     @IsBoolean()
