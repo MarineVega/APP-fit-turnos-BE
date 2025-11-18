@@ -14,10 +14,9 @@ export class Reserva {
     @JoinColumn({ name: 'actividad_id' })       
         private actividad: Actividad;
     
-    //mocke o “harcodeo” los datos de Profesor para que el sistema no intente hacer el JOIN automáticamente
     @ManyToOne(() => Profesor, { eager: false, nullable: true })
     @JoinColumn({ name: 'profesor_id' })
-        private profesor: Profesor;
+        private profesor: Profesor | null;
 
     //mocke o “harcodeo” los datos del cliente
     @ManyToOne(() => Cliente, { eager: false, nullable: true })
@@ -28,18 +27,19 @@ export class Reserva {
     @JoinColumn({ name: 'horario_id' })
         private horario: Horario;
 
-    @Column({ name: 'fecha', type: 'date' })
-        private fecha: Date;
+    @Column({ name: 'fecha', type: 'varchar' })
+       // private fecha: Date;
+       private fecha: string;       //tuve que configurarlo como string porque al guardar lo hacía cambiando la fecha por un día antes
 
     @Column({ name: 'activo', type: 'boolean' })
         private activo: boolean;
     
     constructor (
         actividad: Actividad,
-        profesor: Profesor,
+        profesor: Profesor | null,
         cliente: Cliente,
         horario: Horario,
-        fecha: Date,
+        fecha: string,
         activo: boolean
     ) {
         this.actividad = actividad;
@@ -66,11 +66,11 @@ export class Reserva {
         this.actividad = actividad;
     }
 
-    public getProfesor(): Profesor {
+    public getProfesor(): Profesor | null {
         return this.profesor;
     }
 
-    public setProfesor(profesor: Profesor): void {
+    public setProfesor(profesor: Profesor | null): void {
         this.profesor = profesor;
     }
 
@@ -91,12 +91,12 @@ export class Reserva {
         this.horario = horario;
     }
 
-    public getFecha(): Date {
+    public getFecha(): string {
         return this.fecha;
     }
 
-    public setFecha(activo: Date): void {
-        this.fecha = this.fecha;
+    public setFecha(fecha: string): void {
+        this.fecha = fecha;
     }
 
     public getActivo(): boolean {

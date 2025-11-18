@@ -21,7 +21,7 @@ export class Horario {
     //mocke o “harcodeo” los datos de Profesor para que el sistema no intente hacer el JOIN automáticamente
     @ManyToOne(() => Profesor, { eager: false, nullable: true })
     @JoinColumn({ name: 'profesor_id' })
-    private profesor: Profesor | null;
+        private profesor: Profesor | null;
 
     @Column({ name: 'dias_id', length: 100, nullable: false })
         private dias: string;
