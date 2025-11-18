@@ -34,23 +34,11 @@ export class HorariosService {
 
   // Obtengo todos los horarios
   public async findAll(): Promise<Horario[]> {
-    //return await this.horarioRepository.find();
-
     const horarios = await this.horarioRepository.find({
-      relations: ['actividad', 'hora'],           // omito 'profesor' por ahora
-      //relations: ['actividad', 'profesor', 'hora']
+      relations: ['actividad', 'profesor', 'hora']
     });
 
-    // harcodeo un "nombre de profesor" para no romper el front
-    return horarios.map((h) => ({
-      ...h,
-      profesor: {
-        profesor_id: h.getProfesor()?.profesor_id ?? 0,
-        nombre: 'Prueba',
-        apellido: 'Demo',
-      },
-    })) as any;
-
+    return horarios;    
   }
 
   // Obtengo un horario por ID
