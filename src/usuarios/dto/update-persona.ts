@@ -1,14 +1,4 @@
-import {
-  IsBoolean,
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Length,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional } from 'class-validator';
 
 export enum TipoPersonaEnum {
   ADMIN = 1,
@@ -21,33 +11,23 @@ export class UpdatePersonaDto {
   @IsNumber()
   persona_id?: number;
 
+  // Todos estos son opcionales y NO se validan
   @IsOptional()
-  @IsString()
-  @Length(2, 100)
   nombre?: string;
 
   @IsOptional()
-  @IsString()
-  @Length(2, 100)
   apellido?: string;
 
   @IsOptional()
-  @IsString()
-  @Length(6, 20)
   documento?: string;
 
   @IsOptional()
-  @IsString()
-  @Length(6, 20)
   telefono?: string;
 
   @IsOptional()
-  @IsString()
-  @Length(5, 150)
   domicilio?: string;
 
   @IsOptional()
-  @IsDateString()
   fecha_nac?: string;
 
   @IsOptional()
