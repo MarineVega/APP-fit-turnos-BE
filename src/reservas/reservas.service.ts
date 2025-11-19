@@ -88,7 +88,7 @@ export class ReservasService {
             const horario = await this.horarioRepository.findOne({ where: { horario_id }, });
             if (!horario) throw new NotFoundException(`Horario con id ${horario_id} no encontrado.`);
 
-            // Valido solapamiento: mismo cliente, misma fecha y misma horaInicio
+            // Valido solapamiento: mismo cliente, misma fecha y misma hora
             const reservasCliente = await this.reservaRepository.find({
                 where: {
                     cliente: { cliente_id },
@@ -98,12 +98,10 @@ export class ReservasService {
             });
 
             // horario ya fue obtenido arriba
-            const horaInicioBuscada = horario.getHoraInicio();
+            const hora_id = horario.getHora().hora_id;
 
             const conflicto = reservasCliente.some(r =>
-                r.getHorario() && 
-                r.getHorario().getHora() && 
-                r.getHorario().getHoraInicio() === horaInicioBuscada
+                r.getHorario()?.getHora()?.hora_id === hora_id
             );
             
            if (conflicto) throw new BadRequestException(`El cliente ya tiene una reserva en este mismo horario y fecha.`); 
