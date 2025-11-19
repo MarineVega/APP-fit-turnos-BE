@@ -13,20 +13,32 @@ export class UsuariosService {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
-  // 🟢 Crear usuario (AHORA SÍ ENCRIPTA LA CONTRASEÑA)
+  // 🔧 Helper para limpiar campos vacíos
+  private clean(obj: any) {
+    if (!obj) return obj;
+    const cleaned = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === '' || value === null || value === undefined) continue;
+      cleaned[key] = value;
+    }
+
+    return cleaned;
+  }
+
+  // 🟢 Crear usuario (contraseña encriptada)
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
 
     const nuevoUsuario = this.usuarioRepository.create({
       usuario: createUsuarioDto.usuario,
       email: createUsuarioDto.email,
-      password: hashedPassword,   // ✅ contraseña hasheada
+      password: hashedPassword,
       activo: createUsuarioDto.activo ?? true,
-      persona: createUsuarioDto.persona,
+      persona: this.clean(createUsuarioDto.persona), // 👈 limpio campos vacíos
     });
 
     const saved = await this.usuarioRepository.save(nuevoUsuario);
-
     const { password, ...rest } = saved as any;
     return rest as Usuario;
   }
@@ -96,10 +108,13 @@ export class UsuariosService {
       usuarioEntity.activo = updateUsuarioDto.activo;
 
     if (updateUsuarioDto.persona) {
-      usuarioEntity.persona = { ...usuarioEntity.persona, ...updateUsuarioDto.persona };
+      usuarioEntity.persona = {
+        ...usuarioEntity.persona,
+        ...this.clean(updateUsuarioDto.persona), // 👈 limpio solo los campos enviados
+      };
     }
 
-    const saved = await this.usuarioRepository.save(usuarioEntity as any);
+    const saved = await this.usuarioRepository.save(usuarioEntity);
     const { password, ...rest } = saved as any;
     return rest as Usuario;
   }
@@ -141,7 +156,7 @@ export class UsuariosService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
-  // 🟢 Actualizar password desde AuthService
+  // 🟢 Update password desde AuthService
   async updatePassword(id: number, hashedPassword: string) {
     const usuario = await this.findByIdWithPassword(id);
 

@@ -45,4 +45,10 @@ export class AuthController {
   async resetPassword(@Body() body: { email: string; password: string }) {
     return this.authService.resetPassword(body.email, body.password);
   }
+// Enviar código de recuperación por email
+  @Post('send-code')
+  async sendCode(@Body() body) {
+  return this.authService.sendRecoveryCode(body.email, body.codigo);
+}
+
 }

@@ -12,6 +12,7 @@ import { HorasModule } from './horas/horas.module';
 import { ReservasModule } from './reservas/reservas.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfesoresModule } from './profesores/profesores.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ProfesoresModule } from './profesores/profesores.module';
     ReservasModule,
     AuthModule,
     ProfesoresModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

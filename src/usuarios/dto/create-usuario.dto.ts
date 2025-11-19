@@ -1,84 +1,67 @@
 import {
   IsBoolean,
   IsEmail,
-  IsEnum,
-  IsDateString,
-  IsNotEmpty,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
-  Length,
   MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export enum TipoPersonaEnum {
-  ADMIN = 1,
-  PROFESOR = 2,
-  CLIENTE = 3,
-}
-
-class CreatePersonaDto {
+// DTO interno para Persona (debe ir ARRIBA)
+export class PersonaDto {
   @IsOptional()
   @IsNumber()
   persona_id?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  @Length(2, 100)
-  nombre: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @Length(2, 100)
-  apellido: string;
+  nombre?: string;
 
   @IsOptional()
   @IsString()
-  @Length(6, 20)
+  apellido?: string;
+
+  @IsOptional()
+  @IsString()
   documento?: string;
 
   @IsOptional()
   @IsString()
-  @Length(6, 20)
   telefono?: string;
 
   @IsOptional()
   @IsString()
-  @Length(5, 150)
   domicilio?: string;
 
   @IsOptional()
-  @IsDateString()
+  @IsString()
   fecha_nac?: string;
 
-  @IsNotEmpty()
-  @IsEnum(TipoPersonaEnum, { message: 'tipoPersona_id debe ser 1, 2 o 3' })
-  tipoPersona_id: TipoPersonaEnum;
+  // ÚNICO campo obligatorio
+  @IsNumber()
+  tipoPersona_id: number;
 
   @IsOptional()
   @IsBoolean()
-  activo?: boolean = true;
+  activo?: boolean;
 }
 
+// DTO principal de Usuario
 export class CreateUsuarioDto {
   @IsOptional()
   @IsNumber()
   usuario_id?: number;
 
-  @IsNotEmpty()
   @IsString()
-  @Length(3, 50, { message: 'El usuario debe tener entre 3 y 50 caracteres' })
   usuario: string;
 
-  @IsNotEmpty()
   @IsEmail()
   email: string;
 
-  @IsNotEmpty()
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
+  @MinLength(6)
   @IsString()
   password: string;
 
@@ -88,6 +71,6 @@ export class CreateUsuarioDto {
 
   @IsObject()
   @ValidateNested()
-  @Type(() => CreatePersonaDto)
-  persona: CreatePersonaDto;
+  @Type(() => PersonaDto)
+  persona: PersonaDto;
 }
