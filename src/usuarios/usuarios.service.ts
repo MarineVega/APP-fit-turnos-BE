@@ -26,7 +26,7 @@ export class UsuariosService {
     return cleaned;
   }
 
-  // 🟢 Crear usuario (contraseña encriptada)
+  // Crear usuario (contraseña encriptada)
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
 
@@ -43,7 +43,7 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // 🟢 Obtener todos (sin password)
+  // Obtener todos (sin password)
   async findAll(): Promise<Usuario[]> {
     const users = await this.usuarioRepository.find({ relations: ['persona'] });
     return users.map((u) => {
@@ -52,7 +52,7 @@ export class UsuariosService {
     });
   }
 
-  // 🟢 Obtener uno (sin password)
+  // Obtener uno (sin password)
   async findOne(id: number): Promise<Usuario> {
     const usuario = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -67,7 +67,7 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // 🟢 Buscar por email (login)
+  // Buscar por email (login)
   async findByEmail(email: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
       where: { email },
@@ -82,7 +82,7 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // 🟢 Actualizar usuario
+  // Actualizar usuario
   async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
     const usuarioEntity = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -119,7 +119,7 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // 🟢 Buscar usuario completo (con password)
+  // Buscar usuario completo (con password)
   async findByIdWithPassword(id: number): Promise<Usuario | null> {
     return await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -127,7 +127,7 @@ export class UsuariosService {
     });
   }
 
-  // 🔴 Eliminar usuario
+  // Eliminar usuario
   async remove(id: number): Promise<void> {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
@@ -136,7 +136,7 @@ export class UsuariosService {
     await this.usuarioRepository.remove(usuario);
   }
 
-  // 🟢 Cambiar contraseña
+  // Cambiar contraseña
   async cambiarPassword(id: number, actual: string, nueva: string) {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
@@ -156,7 +156,7 @@ export class UsuariosService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
-  // 🟢 Update password desde AuthService
+  //  Update password desde AuthService
   async updatePassword(id: number, hashedPassword: string) {
     const usuario = await this.findByIdWithPassword(id);
 
