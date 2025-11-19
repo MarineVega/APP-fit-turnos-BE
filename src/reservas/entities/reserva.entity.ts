@@ -10,29 +10,38 @@ export class Reserva {
     @PrimaryGeneratedColumn({ name: 'reserva_id' })
         reserva_id: number;
 
+    // -------------------------------------------------------------------
+    // Relaciones
+    // -------------------------------------------------------------------
+    
     @ManyToOne(() => Actividad, { eager: true })    
     @JoinColumn({ name: 'actividad_id' })       
-        private actividad: Actividad;
+        actividad: Actividad;
     
     @ManyToOne(() => Profesor, { eager: false, nullable: true })
     @JoinColumn({ name: 'profesor_id' })
-        private profesor: Profesor | null;
+        profesor: Profesor | null;
 
-    //mocke o “harcodeo” los datos del cliente
-    @ManyToOne(() => Cliente, { eager: false, nullable: true })
+    @ManyToOne(() => Cliente, { eager: false })
     @JoinColumn({ name: 'cliente_id' })
-        private cliente: Cliente;
+        cliente: Cliente;
 
     @ManyToOne(() => Horario, { eager: true })
     @JoinColumn({ name: 'horario_id' })
-        private horario: Horario;
+        horario: Horario;
 
-    @Column({ name: 'fecha', type: 'varchar' })
-       // private fecha: Date;
-       private fecha: string;       //tuve que configurarlo como string porque al guardar lo hacía cambiando la fecha por un día antes
+    // -------------------------------------------------------------------
+    // Campos
+    // -------------------------------------------------------------------
+    @Column({ name: 'fecha', type: 'varchar' })       
+       fecha: string;       // formato "YYYY-MM-DD" -> tuve que configurarlo como string porque al guardar lo hacía cambiando la fecha por un día antes
 
     @Column({ name: 'activo', type: 'boolean' })
         private activo: boolean;
+    
+    // -------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------
     
     constructor (
         actividad: Actividad,
