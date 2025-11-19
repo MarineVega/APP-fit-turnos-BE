@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { MailService } from '../mail/mail.service'; 
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class AuthService {
   constructor(
     private readonly usuariosService: UsuariosService,
     private readonly jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   //  Login
@@ -78,4 +80,10 @@ export class AuthService {
 
     return { message: 'Contraseña restablecida correctamente' };
   }
+  // Enviar código de recuperación por email
+  async sendRecoveryCode(email: string, codigo: string) {
+  await this.mailService.sendRecoveryCode(email, codigo);
+  return { message: "Código enviado" };
+}
+
 }

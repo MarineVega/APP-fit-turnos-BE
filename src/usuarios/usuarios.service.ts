@@ -13,25 +13,37 @@ export class UsuariosService {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
-  // 🟢 Crear usuario (AHORA SÍ ENCRIPTA LA CONTRASEÑA)
+  // 🔧 Helper para limpiar campos vacíos
+  private clean(obj: any) {
+    if (!obj) return obj;
+    const cleaned = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === '' || value === null || value === undefined) continue;
+      cleaned[key] = value;
+    }
+
+    return cleaned;
+  }
+
+  // Crear usuario (contraseña encriptada)
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
 
     const nuevoUsuario = this.usuarioRepository.create({
       usuario: createUsuarioDto.usuario,
       email: createUsuarioDto.email,
-      password: hashedPassword,   // ✅ contraseña hasheada
+      password: hashedPassword,
       activo: createUsuarioDto.activo ?? true,
-      persona: createUsuarioDto.persona,
+      persona: this.clean(createUsuarioDto.persona), // 👈 limpio campos vacíos
     });
 
     const saved = await this.usuarioRepository.save(nuevoUsuario);
-
     const { password, ...rest } = saved as any;
     return rest as Usuario;
   }
 
-  // 🟢 Obtener todos (sin password)
+  // Obtener todos (sin password)
   async findAll(): Promise<Usuario[]> {
     const users = await this.usuarioRepository.find({ relations: ['persona'] });
     return users.map((u) => {
@@ -40,7 +52,7 @@ export class UsuariosService {
     });
   }
 
-  // 🟢 Obtener uno (sin password)
+  // Obtener uno (sin password)
   async findOne(id: number): Promise<Usuario> {
     const usuario = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -55,7 +67,7 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // 🟢 Buscar por email (login)
+  // Buscar por email (login)
   async findByEmail(email: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
       where: { email },
@@ -70,7 +82,7 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // 🟢 Actualizar usuario
+  // Actualizar usuario
   async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
     const usuarioEntity = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -96,15 +108,18 @@ export class UsuariosService {
       usuarioEntity.activo = updateUsuarioDto.activo;
 
     if (updateUsuarioDto.persona) {
-      usuarioEntity.persona = { ...usuarioEntity.persona, ...updateUsuarioDto.persona };
+      usuarioEntity.persona = {
+        ...usuarioEntity.persona,
+        ...this.clean(updateUsuarioDto.persona), // 👈 limpio solo los campos enviados
+      };
     }
 
-    const saved = await this.usuarioRepository.save(usuarioEntity as any);
+    const saved = await this.usuarioRepository.save(usuarioEntity);
     const { password, ...rest } = saved as any;
     return rest as Usuario;
   }
 
-  // 🟢 Buscar usuario completo (con password)
+  // Buscar usuario completo (con password)
   async findByIdWithPassword(id: number): Promise<Usuario | null> {
     return await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -112,7 +127,7 @@ export class UsuariosService {
     });
   }
 
-  // 🔴 Eliminar usuario
+  // Eliminar usuario
   async remove(id: number): Promise<void> {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
@@ -121,7 +136,7 @@ export class UsuariosService {
     await this.usuarioRepository.remove(usuario);
   }
 
-  // 🟢 Cambiar contraseña
+  // Cambiar contraseña
   async cambiarPassword(id: number, actual: string, nueva: string) {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
@@ -141,7 +156,7 @@ export class UsuariosService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
-  // 🟢 Actualizar password desde AuthService
+  //  Update password desde AuthService
   async updatePassword(id: number, hashedPassword: string) {
     const usuario = await this.findByIdWithPassword(id);
 
