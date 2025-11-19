@@ -70,15 +70,6 @@ export class Horario {
         this.actividad = actividad;
     }
 
-    /*  Descomentar cuando esté programado Profesor
-    public getProfesor(): Profesor {
-        return this.profesor;
-    }
-
-    public setProfesor(profesor: Profesor): void {
-        this.profesor = profesor;
-    }
-    */
    public getProfesor(): Profesor | null {
         return this.profesor;
     }
@@ -106,6 +97,11 @@ export class Horario {
     public setHora(hora: Hora): void {
         this.hora = hora;
     }
+
+    public getHoraInicio(): string {
+        return this.hora.getHoraInicio();
+    }
+
 
     public getCupoMaximo(): number | null {
         return this.cupoMaximo;
