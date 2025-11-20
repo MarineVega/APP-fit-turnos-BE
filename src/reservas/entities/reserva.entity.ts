@@ -37,7 +37,7 @@ export class Reserva {
        fecha: string;       // formato "YYYY-MM-DD" -> tuve que configurarlo como string porque al guardar lo hacía cambiando la fecha por un día antes
 
     @Column({ name: 'activo', type: 'boolean' })
-        private activo: boolean;
+        activo: boolean;
     
     // -------------------------------------------------------------------
     // Constructor

@@ -13,7 +13,7 @@ export class Hora {
         private horaFin: string;
 
     @Column({ name: 'activa', type: 'boolean', default: true })
-       private activa: boolean;
+       activa: boolean;
 
 
     constructor(

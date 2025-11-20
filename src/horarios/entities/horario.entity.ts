@@ -11,7 +11,7 @@ export class Horario {
 
     @ManyToOne(() => Actividad, { eager: true })    // Creo la relación con la entidad Actividad (una actividad puede tener muchos horarios). --> { eager: true } → Hace que TypeORM cargue automáticamente la relación al hacer un find() (sin necesidad de usar relations manualmente).
     @JoinColumn({ name: 'actividad_id' })           // Especifico el nombre de la columna FK en la tabla horarios
-        private actividad: Actividad;
+        actividad: Actividad;
     
     @ManyToOne(() => Profesor, { eager: false, nullable: true })
     @JoinColumn({ name: 'profesor_id' })
@@ -28,7 +28,7 @@ export class Horario {
         private cupoMaximo: number | null;
         
     @Column({ name: 'activo', type: 'boolean' })
-        private activo: boolean;
+        activo: boolean;
 
     constructor (
         actividad: Actividad,
