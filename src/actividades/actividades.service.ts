@@ -112,30 +112,83 @@ export class ActividadesService {
       // No permito modificar si tiene horarios activos
       if (await this.tieneHorariosActivos(id)) throw new BadRequestException('No se puede modificar la actividad porque tiene horarios activos.');
 
-      // Validación de nombre duplicado
-      if (updateActividadDto.nombre) {
-        const yaExiste = await this.actividadRepository.findOne({
-          where: { nombre: updateActividadDto.nombre.trim() }
-        });
+      // --------------------------------------------------------------------
+      // Valido campos (para evitar null, string vacíos, etc.)
+      // --------------------------------------------------------------------
+      if ("nombre" in updateActividadDto) {
+        const nombre = updateActividadDto.nombre;
+       
+        if (
+          nombre === null &&
+          nombre === undefined &&
+          typeof nombre !== "string" 
+        ) {
+          throw new BadRequestException("El nombre es obligatorio y no puede estar vacío.");
+        }
 
-        if (yaExiste && yaExiste.actividad_id !== id) throw new BadRequestException(`Ya existe otra actividad con el nombre "${updateActividadDto.nombre}".`);        
+        // Validación de nombre duplicado
+        if (updateActividadDto.nombre) {
+          const yaExiste = await this.actividadRepository.findOne({
+            where: { nombre: updateActividadDto.nombre.trim() }
+          });
+
+          if (yaExiste && yaExiste.actividad_id !== id) throw new BadRequestException(`Ya existe otra actividad con el nombre "${updateActividadDto.nombre}".`);        
+        }
+
+        actividad.setNombre(nombre ?? actividad.getNombre());
+      }
+      
+      if ("descripcion" in updateActividadDto) {
+        const descripcion = updateActividadDto.descripcion;
+
+        if (
+          descripcion !== null &&
+          descripcion !== undefined &&
+          typeof descripcion !== "string"
+        ) {
+          throw new BadRequestException("La descripción debe ser un texto válido.");
+        }
+
+        actividad.setDescripcion(descripcion ?? actividad.getDescripcion());
       }
 
-      if (updateActividadDto.nombre !== undefined) {
-        actividad.setNombre(updateActividadDto.nombre);
+      if ("cupoMaximo" in updateActividadDto) {
+        const cupo = updateActividadDto.cupoMaximo;
+
+        if (cupo !== null && cupo !== undefined) {
+          if (typeof cupo !== "number" || cupo < 1 || cupo > 100) {
+            throw new BadRequestException("El cupo máximo debe estar entre 1 y 100.");
+          }
+        }
+
+        actividad.setCupoMaximo(cupo ?? actividad.getCupoMaximo());
       }
-      if (updateActividadDto.descripcion !== undefined) {
-        actividad.setDescripcion(updateActividadDto.descripcion);
-      }      
-      if (updateActividadDto.cupoMaximo !== undefined) {
-        actividad.setCupoMaximo(updateActividadDto.cupoMaximo);
+
+      if ("imagen" in updateActividadDto) {
+        const imagen = updateActividadDto.imagen;
+
+        if (
+          imagen !== null &&
+          imagen !== undefined &&
+          typeof imagen !== "string"
+        ) {
+          throw new BadRequestException("La imagen debe ser una cadena de texto válida.");
+        }
+
+        actividad.setImagen(imagen ?? actividad.getImagen());
       }
-      if (updateActividadDto.imagen !== undefined) {
-        actividad.setImagen(updateActividadDto.imagen);
+
+      if ("activa" in updateActividadDto) {
+        const activa = updateActividadDto.activa;
+
+        if (activa !== null && activa !== undefined && typeof activa !== "boolean") {
+          throw new BadRequestException("El estado 'activa' debe ser true o false.");
+        }
+
+        actividad.setActiva(activa ?? actividad.getActiva());
       }
-      if (updateActividadDto.activa!== undefined) {
-        actividad.setActiva(updateActividadDto.activa);
-      }
+
+      // Guardo los cambios
       actividad = await this.actividadRepository.save(actividad);
       
       if (!actividad)

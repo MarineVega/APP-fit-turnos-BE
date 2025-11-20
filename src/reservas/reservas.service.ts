@@ -63,15 +63,26 @@ export class ReservasService {
             const { actividad_id, profesor_id, cliente_id, horario_id, fecha, activo } = 
             createReservaDto;
 
-            // Valido existencia de actividad
-            const actividad = await this.actividadRepository.findOne({where: { actividad_id } });
-            if (!actividad) throw new NotFoundException(`Actividad con id ${actividad_id} no encontrada.`);
+            // 1 - Valido existencia de los IDs
+            const actividad = await this.actividadRepository.findOne({ 
+                where: { 
+                actividad_id,
+                activa: true
+                } 
+            });
+            if (!actividad) throw new NotFoundException(`Actividad con id ${actividad_id} no encontrada o está desactivada.`);
+                        
+            let profesor: Profesor | null = null;       // Profesor opcional
 
-            // Profesor opcional
-            let profesor: Profesor | null = null;
             if (profesor_id) {
-                profesor = await this.profesorRepository.findOne({where: { profesor_id },});
+                profesor = await this.profesorRepository.findOne({ 
+                where: { 
+                    profesor_id/*,
+                    activo: true*/
+                } 
+                });
 
+                //if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado o está desactivado.`);
                 if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado.`);
             }
 
@@ -80,14 +91,20 @@ export class ReservasService {
             if (!cliente) throw new NotFoundException(`Cliente con id ${cliente_id} no encontrado.`);
 
             // Valido existencia de horario
-            const horario = await this.horarioRepository.findOne({ where: { horario_id }, });
-            if (!horario) throw new NotFoundException(`Horario con id ${horario_id} no encontrado.`);
+            const horario = await this.horarioRepository.findOne({ 
+                where: { 
+                    horario_id,
+                    activo: true
+                }, 
+            });
+            if (!horario) throw new NotFoundException(`Horario con id ${horario_id} no encontrado o está desactivado.`);
 
             // Valido solapamiento: mismo cliente, misma fecha y misma hora
             const reservasCliente = await this.reservaRepository.find({
                 where: {
                     cliente: { cliente_id },
-                    fecha
+                    fecha,
+                    activo: true
                 },
                 relations: ['horario', 'horario.hora']
             });
