@@ -10,13 +10,41 @@ import { Repository } from 'typeorm';
 import { CreateActividadDto } from './dto/create-actividad.dto';
 import { UpdateActividadDto } from './dto/update-actividad.dto';
 import { Actividad } from './entities/actividad.entity';
+import { Reserva } from 'src/reservas/entities/reserva.entity';
+import { Horario } from 'src/horarios/entities/horario.entity';
 
 @Injectable()
 export class ActividadesService {  
   constructor(
     @InjectRepository(Actividad)
-    private readonly actividadRepository: Repository<Actividad>,
+      private readonly actividadRepository: Repository<Actividad>,
+
+    @InjectRepository(Reserva)
+      private readonly reservaRepository: Repository<Reserva>,
+
+    @InjectRepository(Horario)
+      private readonly horarioRepository: Repository<Horario>,
   ) {}
+
+  private async tieneReservasActivas(actividad_id: number): Promise<boolean> {
+    const reservas = await this.reservaRepository.count({
+      where: { 
+        actividad: { actividad_id },
+        activo: true
+      },
+    });
+    return reservas > 0;
+  }
+
+  private async tieneHorariosActivos(actividad_id: number): Promise<boolean> {
+    const horarios = await this.horarioRepository.count({
+      where: { 
+        actividad: { actividad_id },
+        activo: true
+      },
+    });
+    return horarios > 0;
+  }
 
   // --------------------------------------------------------------------
   // Obtengo todas las actividades
@@ -41,7 +69,6 @@ export class ActividadesService {
   // --------------------------------------------------------------------
   public async create(createActividadDto: CreateActividadDto): Promise<Actividad> {
     try {
-
       // Valido nombre duplicado
       const yaExiste = await this.actividadRepository.findOne({
         where: { nombre: createActividadDto.nombre.trim() }
@@ -78,6 +105,12 @@ export class ActividadesService {
     try {
       let actividad = await this.findOne(id);
       if (!actividad) throw new NotFoundException(`Actividad con id ${id} no encontrada.`);
+
+      // No permito modificar si tiene reservas activa
+      if (await this.tieneReservasActivas(id)) throw new BadRequestException('No se puede modificar la actividad porque tiene reservas activas.');
+
+      // No permito modificar si tiene horarios activos
+      if (await this.tieneHorariosActivos(id)) throw new BadRequestException('No se puede modificar la actividad porque tiene horarios activos.');
 
       // Validación de nombre duplicado
       if (updateActividadDto.nombre) {
@@ -125,6 +158,12 @@ export class ActividadesService {
     try {
       const actividad = await this.findOne(id);
       if (!actividad) throw new NotFoundException(`Actividad con id ${id} no encontrada.`);
+
+       // No permito eliminar si tiene reservas activa
+      if (await this.tieneReservasActivas(id)) throw new BadRequestException('No se puede eliminar la actividad porque tiene reservas activas.');
+
+      // No permito eliminar si tiene horarios activos
+      if (await this.tieneHorariosActivos(id)) throw new BadRequestException('No se puede eliminar la actividad porque tiene horarios activos.');
 
       await this.actividadRepository.delete({ actividad_id:id });
       return true;

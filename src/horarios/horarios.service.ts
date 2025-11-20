@@ -13,6 +13,7 @@ import { Horario } from './entities/horario.entity';
 import { Actividad } from 'src/actividades/entities/actividad.entity';
 import { Profesor } from 'src/profesores/entities/profesor.entity';
 import { Hora } from 'src/horas/entities/hora.entity';
+import { Reserva } from 'src/reservas/entities/reserva.entity';
 
 @Injectable()
 export class HorariosService {
@@ -28,6 +29,10 @@ export class HorariosService {
 
     @InjectRepository(Hora)
     private readonly horaRepository: Repository<Hora>,
+
+    @InjectRepository(Reserva)
+    private readonly reservaRepository: Repository<Reserva>,
+
   ) {}
 
   private tienenDiasEnComun(diasA: string, diasB: string): boolean {
@@ -36,6 +41,17 @@ export class HorariosService {
 
     return arrA.some(d => arrB.includes(d));      // true → hay coincidencia
   }
+
+  private async tieneReservasActivas(horario_id: number): Promise<boolean> {
+    const reservas = await this.reservaRepository.count({
+      where: { 
+        horario: { horario_id },
+        activo: true
+      },
+    });
+    return reservas > 0;
+  }
+
   
   // --------------------------------------------------------------------
   // Obtengo todos los horarios
@@ -58,7 +74,7 @@ export class HorariosService {
   }
 
   // --------------------------------------------------------------------
-  // Creo un nuevo horario
+  // Creo un horario
   // --------------------------------------------------------------------
   public async create(createHorarioDto: CreateHorarioDto): Promise<Horario> {
     try {
@@ -126,10 +142,13 @@ export class HorariosService {
   }
 
   // --------------------------------------------------------------------
-  // Actualizo un horario existente
+  // Actualizo horario
   // --------------------------------------------------------------------
   public async update(id: number, updateHorarioDto: UpdateHorarioDto): Promise<Horario> {
     try {
+      let horario = await this.findOne(id);      
+      if (!horario) throw new NotFoundException(`Horario con id ${id} no encontrado.`);
+
       const horariosExistentes = await this.horarioRepository.find({
         relations: ['actividad', 'profesor', 'hora']
       });
@@ -137,6 +156,9 @@ export class HorariosService {
       for (const h of horariosExistentes) {
         if (h.horario_id === id) continue;      // saltar este mismo
 
+        // No permito modificar si tiene reservas activa
+        if (await this.tieneReservasActivas(id)) throw new BadRequestException('No se puede modificar el horario porque tiene reservas activas.');
+      
         const mismaActividad = (updateHorarioDto.actividad_id ?? h.getActividad().actividad_id) === h.getActividad().actividad_id;
         const profIdNuevo = updateHorarioDto.profesor_id ?? h.getProfesor()?.profesor_id ?? null;
         const profIdExistente = h.getProfesor()?.profesor_id ?? null;
@@ -160,10 +182,7 @@ export class HorariosService {
           if (this.tienenDiasEnComun(h.getDias(), diasNuevos)) throw new BadRequestException(`Ya existe otro horario con misma actividad, profesor, hora y días superpuestos.`);
         }
       }
-
-      let horario = await this.findOne(id);
-      if (!horario) throw new NotFoundException('No se encuentra el horario');
-
+      
       if (updateHorarioDto.actividad_id !== undefined) {
         const actividad = await this.actividadRepository.findOne({ where: { actividad_id: updateHorarioDto.actividad_id } });
         if (!actividad) throw new NotFoundException(`Actividad con id ${updateHorarioDto.actividad_id} no encontrada.`);
@@ -238,6 +257,9 @@ export class HorariosService {
       const horario = await this.findOne(id);
       if (!horario) throw new NotFoundException(`Horario con id ${id} no encontrado.`);
 
+      // No permito eliminar si tiene reservas activa
+      if (await this.tieneReservasActivas(id)) throw new BadRequestException('No se puede eliminar el horario porque tiene reservas activas.');
+            
       await this.horarioRepository.delete({ horario_id: id });
       return true;
 
