@@ -7,15 +7,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { Reserva } from './entities/reserva.entity';
-
 import { Actividad } from 'src/actividades/entities/actividad.entity';
 import { Profesor } from 'src/profesores/entities/profesor.entity';
 import { Cliente } from 'src/clientes/entities/cliente.entity';
 import { Horario } from 'src/horarios/entities/horario.entity';
-
 @Injectable()
 export class ReservasService {
     constructor(
@@ -40,7 +37,7 @@ export class ReservasService {
     // --------------------------------------------------------------------
     public async findAll(): Promise<Reserva[]> {
         return await this.reservaRepository.find({
-        relations: ['actividad', 'profesor', 'cliente', 'horario'],
+           relations: ['actividad', 'profesor', 'cliente', 'horario'],
         });
     }
 
@@ -53,9 +50,7 @@ export class ReservasService {
             relations: ['actividad', 'profesor', 'cliente', 'horario'],
         });
 
-        if (!reserva) {
-            throw new NotFoundException(`Reserva con id ${id} no encontrada.`);
-        }
+        if (!reserva) throw new NotFoundException(`Reserva con id ${id} no encontrada.`);
 
         return reserva;
     }
@@ -107,7 +102,15 @@ export class ReservasService {
            if (conflicto) throw new BadRequestException(`El cliente ya tiene una reserva en este mismo horario y fecha.`); 
 
             // Creo y guardo
-            const reserva = await this.reservaRepository.save(new Reserva(actividad, profesor, cliente, horario, fecha, activo),);
+            const reserva = await this.reservaRepository.save(
+                new Reserva (
+                    actividad, 
+                    profesor, 
+                    cliente, 
+                    horario, 
+                    fecha, 
+                    activo)
+            );
 
             if (!reserva) throw new BadRequestException('No se pudo registrar la reserva.');      
 
@@ -126,12 +129,12 @@ export class ReservasService {
     // --------------------------------------------------------------------
     public async delete(id: number): Promise<boolean> {
         try {
-        const reserva = await this.findOne(id);
-        if (!reserva) 
-            throw new NotFoundException(`Reserva con id ${id} no encontrada.`);
-
+            const reserva = await this.findOne(id);
+            if (!reserva) throw new NotFoundException(`Reserva con id ${id} no encontrada.`);
+            
             await this.reservaRepository.delete({ reserva_id: id });
             return true;
+
         } catch (error) {
             if (error instanceof HttpException) throw error;
             console.error('ERROR EN delete():', error);
