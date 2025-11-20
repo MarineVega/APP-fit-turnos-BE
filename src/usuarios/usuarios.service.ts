@@ -6,14 +6,20 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario';
 import * as bcrypt from 'bcrypt';
 
+//  IMPORTANTE: importamos ClientesService
+import { ClientesService } from 'src/clientes/clientes.service';
+
 @Injectable()
 export class UsuariosService {
   constructor(
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
+
+    // Inyección del servicio de clientes
+    private readonly clientesService: ClientesService,
   ) {}
 
-  // 🔧 Helper para limpiar campos vacíos
+  //   limpiar campos vacíos
   private clean(obj: any) {
     if (!obj) return obj;
     const cleaned = {};
@@ -26,7 +32,9 @@ export class UsuariosService {
     return cleaned;
   }
 
-  // Crear usuario (contraseña encriptada)
+  // -----------------------------------------------------------
+  //  Crear usuario
+  // -----------------------------------------------------------
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
 
@@ -35,15 +43,23 @@ export class UsuariosService {
       email: createUsuarioDto.email,
       password: hashedPassword,
       activo: createUsuarioDto.activo ?? true,
-      persona: this.clean(createUsuarioDto.persona), // 👈 limpio campos vacíos
+      persona: this.clean(createUsuarioDto.persona),
     });
 
     const saved = await this.usuarioRepository.save(nuevoUsuario);
+
+    // ⬇SI ES CLIENTE → crear en tabla clientes
+    if (saved.persona.tipoPersona_id === 3) {
+      await this.clientesService.createFromPersona(saved.persona.persona_id);
+    }
+
     const { password, ...rest } = saved as any;
     return rest as Usuario;
   }
 
-  // Obtener todos (sin password)
+  // -----------------------------------------------------------
+  //  Obtener todos
+  // -----------------------------------------------------------
   async findAll(): Promise<Usuario[]> {
     const users = await this.usuarioRepository.find({ relations: ['persona'] });
     return users.map((u) => {
@@ -52,7 +68,9 @@ export class UsuariosService {
     });
   }
 
-  // Obtener uno (sin password)
+  // -----------------------------------------------------------
+  //  Obtener uno
+  // -----------------------------------------------------------
   async findOne(id: number): Promise<Usuario> {
     const usuario = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -67,7 +85,9 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // Buscar por email (login)
+  // -----------------------------------------------------------
+  //  Buscar por email (login)
+  // -----------------------------------------------------------
   async findByEmail(email: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
       where: { email },
@@ -82,7 +102,9 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
+  // -----------------------------------------------------------
   // Actualizar usuario
+  // -----------------------------------------------------------
   async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
     const usuarioEntity = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -93,6 +115,7 @@ export class UsuariosService {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
 
+    // Datos del usuario
     if (updateUsuarioDto.usuario !== undefined)
       usuarioEntity.usuario = updateUsuarioDto.usuario;
 
@@ -107,19 +130,28 @@ export class UsuariosService {
     if (updateUsuarioDto.activo !== undefined)
       usuarioEntity.activo = updateUsuarioDto.activo;
 
+    // Datos de persona
     if (updateUsuarioDto.persona) {
       usuarioEntity.persona = {
         ...usuarioEntity.persona,
-        ...this.clean(updateUsuarioDto.persona), // 👈 limpio solo los campos enviados
+        ...this.clean(updateUsuarioDto.persona),
       };
     }
 
     const saved = await this.usuarioRepository.save(usuarioEntity);
+
+    // ⬇SI CAMBIÓ A CLIENTE → crear en tabla clientes
+    if (saved.persona.tipoPersona_id === 3) {
+      await this.clientesService.createFromPersona(saved.persona.persona_id);
+    }
+
     const { password, ...rest } = saved as any;
     return rest as Usuario;
   }
 
-  // Buscar usuario completo (con password)
+  // -----------------------------------------------------------
+  // Buscar usuario con password
+  // -----------------------------------------------------------
   async findByIdWithPassword(id: number): Promise<Usuario | null> {
     return await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -127,7 +159,9 @@ export class UsuariosService {
     });
   }
 
+  // -----------------------------------------------------------
   // Eliminar usuario
+  // -----------------------------------------------------------
   async remove(id: number): Promise<void> {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
@@ -136,7 +170,9 @@ export class UsuariosService {
     await this.usuarioRepository.remove(usuario);
   }
 
+  // -----------------------------------------------------------
   // Cambiar contraseña
+  // -----------------------------------------------------------
   async cambiarPassword(id: number, actual: string, nueva: string) {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
@@ -156,7 +192,9 @@ export class UsuariosService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
+  // -----------------------------------------------------------
   //  Update password desde AuthService
+  // -----------------------------------------------------------
   async updatePassword(id: number, hashedPassword: string) {
     const usuario = await this.findByIdWithPassword(id);
 
