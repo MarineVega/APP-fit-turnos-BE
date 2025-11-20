@@ -36,9 +36,9 @@ export class UpdateUsuarioDto {
   activo?: boolean;
 
   // 🔥 NUEVOS CAMPOS EXACTAMENTE COMO EN TU TABLA
-@IsOptional()
-@IsNumber()
-verificado?: number;
+  @IsOptional()
+  @IsNumber()
+  verificado?: number;
 
   @IsOptional()
   @IsString()
