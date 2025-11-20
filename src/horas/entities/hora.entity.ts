@@ -7,13 +7,13 @@ export class Hora {
         hora_id: number;
 
     @Column({ name: 'horaInicio', type: 'time' })
-        private horaInicio: string;
+        horaInicio: string;
 
     @Column({ name: 'horaFin', type: 'time' })
         private horaFin: string;
 
     @Column({ name: 'activa', type: 'boolean', default: true })
-       private activa: boolean;
+       activa: boolean;
 
 
     constructor(

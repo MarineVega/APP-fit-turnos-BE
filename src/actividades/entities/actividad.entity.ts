@@ -19,7 +19,7 @@ export class Actividad {
         private imagen: string;
 
     @Column({ name: 'activa', type: 'boolean', default: true })
-        private activa: boolean;
+        activa: boolean;
 
     constructor (
         nombre: string, 
