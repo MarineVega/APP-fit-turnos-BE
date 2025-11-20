@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// DTO interno para Persona (debe ir ARRIBA)
+// DTO interno para Persona 
 export class PersonaDto {
   @IsOptional()
   @IsNumber()
@@ -68,6 +68,17 @@ export class CreateUsuarioDto {
   @IsOptional()
   @IsBoolean()
   activo?: boolean = true;
+
+  //  CAMPOS QUE TE FALTABAN (para verificación por email)
+   
+  @IsOptional()
+  @IsNumber()
+  verificado?: number;
+
+  @IsOptional()
+  @IsString()
+  verification_token?: string | null;
+
 
   @IsObject()
   @ValidateNested()

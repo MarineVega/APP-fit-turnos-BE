@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
@@ -6,7 +10,7 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario';
 import * as bcrypt from 'bcrypt';
 
-//  IMPORTANTE: importamos ClientesService
+// IMPORTANTE
 import { ClientesService } from 'src/clientes/clientes.service';
 
 @Injectable()
@@ -15,11 +19,12 @@ export class UsuariosService {
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
 
-    // Inyección del servicio de clientes
     private readonly clientesService: ClientesService,
   ) {}
 
-  //   limpiar campos vacíos
+  // ---------------------------------------------
+  // Limpieza de campos vacíos
+  // ---------------------------------------------
   private clean(obj: any) {
     if (!obj) return obj;
     const cleaned = {};
@@ -32,24 +37,25 @@ export class UsuariosService {
     return cleaned;
   }
 
-  // -----------------------------------------------------------
-  //  Crear usuario
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Crear usuario (crea persona por cascade)
+  // ---------------------------------------------
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
-    const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
-
     const nuevoUsuario = this.usuarioRepository.create({
       usuario: createUsuarioDto.usuario,
       email: createUsuarioDto.email,
-      password: hashedPassword,
-      activo: createUsuarioDto.activo ?? true,
+      password: createUsuarioDto.password, // ya hasheada
+
+      verificado: createUsuarioDto.verificado ?? 0,
+      verification_token: createUsuarioDto.verification_token ?? null,
+
       persona: this.clean(createUsuarioDto.persona),
     });
 
     const saved = await this.usuarioRepository.save(nuevoUsuario);
 
-    // ⬇SI ES CLIENTE → crear en tabla clientes
-    if (saved.persona.tipoPersona_id === 3) {
+    // Crear cliente si la persona es tipo 3
+    if (saved.persona && saved.persona.tipoPersona_id === 3) {
       await this.clientesService.createFromPersona(saved.persona.persona_id);
     }
 
@@ -57,20 +63,23 @@ export class UsuariosService {
     return rest as Usuario;
   }
 
-  // -----------------------------------------------------------
-  //  Obtener todos
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Obtener todos
+  // ---------------------------------------------
   async findAll(): Promise<Usuario[]> {
-    const users = await this.usuarioRepository.find({ relations: ['persona'] });
+    const users = await this.usuarioRepository.find({
+      relations: ['persona'],
+    });
+
     return users.map((u) => {
       const { password, ...rest } = u as any;
       return rest as Usuario;
     });
   }
 
-  // -----------------------------------------------------------
-  //  Obtener uno
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Obtener uno por id (sin password)
+  // ---------------------------------------------
   async findOne(id: number): Promise<Usuario> {
     const usuario = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -82,12 +91,13 @@ export class UsuariosService {
     }
 
     const { password, ...rest } = usuario as any;
-    return rest as Usuario;
+    return rest;
   }
 
-  // -----------------------------------------------------------
-  //  Buscar por email (login)
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Buscar por email
+  // includePassword = true → incluye password
+  // ---------------------------------------------
   async findByEmail(email: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
       where: { email },
@@ -95,63 +105,42 @@ export class UsuariosService {
     });
 
     if (!user) return null;
-
     if (includePassword) return user;
 
     const { password, ...rest } = user as any;
     return rest as Usuario;
   }
 
-  // -----------------------------------------------------------
-  // Actualizar usuario
-  // -----------------------------------------------------------
-  async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
-    const usuarioEntity = await this.usuarioRepository.findOne({
-      where: { usuario_id: id },
+  // ---------------------------------------------
+  // Buscar por username
+  // includePassword = true → incluye password
+  // ---------------------------------------------
+  async findByUsername(username: string, includePassword = false): Promise<Usuario | null> {
+    const user = await this.usuarioRepository.findOne({
+      where: { usuario: username },
       relations: ['persona'],
     });
 
-    if (!usuarioEntity) {
-      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
-    }
+    if (!user) return null;
+    if (includePassword) return user;
 
-    // Datos del usuario
-    if (updateUsuarioDto.usuario !== undefined)
-      usuarioEntity.usuario = updateUsuarioDto.usuario;
-
-    if (updateUsuarioDto.email !== undefined)
-      usuarioEntity.email = updateUsuarioDto.email;
-
-    if (updateUsuarioDto.password !== undefined) {
-      const hashed = await bcrypt.hash(updateUsuarioDto.password, 10);
-      usuarioEntity.password = hashed;
-    }
-
-    if (updateUsuarioDto.activo !== undefined)
-      usuarioEntity.activo = updateUsuarioDto.activo;
-
-    // Datos de persona
-    if (updateUsuarioDto.persona) {
-      usuarioEntity.persona = {
-        ...usuarioEntity.persona,
-        ...this.clean(updateUsuarioDto.persona),
-      };
-    }
-
-    const saved = await this.usuarioRepository.save(usuarioEntity);
-
-    // ⬇SI CAMBIÓ A CLIENTE → crear en tabla clientes
-    if (saved.persona.tipoPersona_id === 3) {
-      await this.clientesService.createFromPersona(saved.persona.persona_id);
-    }
-
-    const { password, ...rest } = saved as any;
+    const { password, ...rest } = user as any;
     return rest as Usuario;
   }
 
-  // -----------------------------------------------------------
-  // Buscar usuario con password
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Buscar por token de verificación
+  // ---------------------------------------------
+  async findByVerificationToken(token: string): Promise<Usuario | null> {
+    return await this.usuarioRepository.findOne({
+      where: { verification_token: token },
+      relations: ['persona'],
+    });
+  }
+
+  // ---------------------------------------------
+  // Buscar usuario con password (para login)
+  // ---------------------------------------------
   async findByIdWithPassword(id: number): Promise<Usuario | null> {
     return await this.usuarioRepository.findOne({
       where: { usuario_id: id },
@@ -159,30 +148,67 @@ export class UsuariosService {
     });
   }
 
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Actualizar usuario
+  // ---------------------------------------------
+  async update(id: number, updateDto: UpdateUsuarioDto): Promise<Usuario> {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { usuario_id: id },
+      relations: ['persona'],
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    }
+
+    if (updateDto.usuario !== undefined) usuario.usuario = updateDto.usuario;
+    if (updateDto.email !== undefined) usuario.email = updateDto.email;
+
+    if (updateDto.password !== undefined) {
+      const hashed = await bcrypt.hash(updateDto.password, 10);
+      usuario.password = hashed;
+    }
+
+    if (updateDto.verificado !== undefined) usuario.verificado = updateDto.verificado;
+    if (updateDto.verification_token !== undefined)
+      usuario.verification_token = updateDto.verification_token;
+
+    if (updateDto.persona) {
+      usuario.persona = {
+        ...usuario.persona,
+        ...this.clean(updateDto.persona),
+      };
+    }
+
+    const saved = await this.usuarioRepository.save(usuario);
+
+    const { password, ...rest } = saved as any;
+    return rest as Usuario;
+  }
+
+  // ---------------------------------------------
   // Eliminar usuario
-  // -----------------------------------------------------------
+  // ---------------------------------------------
   async remove(id: number): Promise<void> {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
+
     await this.usuarioRepository.remove(usuario);
   }
 
-  // -----------------------------------------------------------
+  // ---------------------------------------------
   // Cambiar contraseña
-  // -----------------------------------------------------------
+  // ---------------------------------------------
   async cambiarPassword(id: number, actual: string, nueva: string) {
     const usuario = await this.findByIdWithPassword(id);
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
 
-    const esCorrecta = await bcrypt.compare(actual, usuario.password);
-    if (!esCorrecta) {
-      throw new Error('La contraseña actual es incorrecta');
-    }
+    const ok = await bcrypt.compare(actual, usuario.password);
+    if (!ok) throw new BadRequestException('La contraseña actual es incorrecta');
 
     const hashed = await bcrypt.hash(nueva, 10);
     usuario.password = hashed;
@@ -192,9 +218,9 @@ export class UsuariosService {
     return { message: 'Contraseña actualizada correctamente' };
   }
 
-  // -----------------------------------------------------------
-  //  Update password desde AuthService
-  // -----------------------------------------------------------
+  // ---------------------------------------------
+  // Actualizar contraseña (usado desde AuthService)
+  // ---------------------------------------------
   async updatePassword(id: number, hashedPassword: string) {
     const usuario = await this.findByIdWithPassword(id);
 
@@ -203,8 +229,30 @@ export class UsuariosService {
     }
 
     usuario.password = hashedPassword;
+
     await this.usuarioRepository.save(usuario);
 
     return { message: 'Contraseña actualizada correctamente' };
+  }
+
+  // ---------------------------------------------
+  // Verificar cuenta
+  // ---------------------------------------------
+  async verifyUser(token: string) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { verification_token: token },
+    });
+
+    if (!usuario) {
+      throw new BadRequestException('Token inválido o expirado');
+    }
+
+    usuario.verificado = 1;
+    usuario.verification_token = null;
+
+    const saved = await this.usuarioRepository.save(usuario);
+
+    const { password, ...rest } = saved as any;
+    return rest;
   }
 }
