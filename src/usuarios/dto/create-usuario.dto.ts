@@ -67,11 +67,7 @@ export class CreateUsuarioDto {
   @IsString({ message: 'La contraseña debe ser un texto.' })
   password: string;
 
-  // ❗ IMPORTANTE: sin default a true, así no activa cuentas del registro
-  @IsOptional()
-  @IsBoolean({ message: 'El estado activo debe ser un valor booleano.' })
-  activo?: boolean;
-
+ 
   @IsOptional()
   @IsNumber({}, { message: 'El campo verificado debe ser un número (0 o 1).' })
   verificado?: number;
