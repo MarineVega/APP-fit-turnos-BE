@@ -49,15 +49,19 @@ export class AuthService {
       usuario,
       email,
       password: hashedPassword,
+      
       verificado: 0,
       verification_token: verificationToken,
-      persona: persona ?? { tipoPersona_id: 3 },
+       persona: persona ?? {
+        tipoPersona_id: 3,
+        activo: false,  
+      },
     };
 
     const creado = await this.usuariosService.create(nuevoUsuario);
 
     // --------------------------------------------------
-    // 🔥 MANDAR EMAIL DE VERIFICACIÓN
+    //  MANDAR EMAIL DE VERIFICACIÓN
     // --------------------------------------------------
     const FRONT_URL = process.env.FRONT_URL || 'http://localhost:5173';
     const url = `${FRONT_URL}/verificar/${verificationToken}`;
