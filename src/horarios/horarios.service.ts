@@ -155,7 +155,23 @@ export class HorariosService {
       if (!hora) throw new NotFoundException(`Hora con id ${hora_id} no encontrada o desactivada.`);
 
 
-      // 2 - Valido solapamientos (mismo profesor, hora y días) solo si los IDs son correctos      
+      // 2 - Valido solapamientos (mismo profesor, hora y días) solo si los IDs son correctos 
+   
+      // Si el profesor es null, no se validan solapamientos
+      if (!profesor_id) {
+        // profesor null → NO se valida solapamiento
+        return await this.horarioRepository.save(
+          new Horario(
+            actividad,
+            null,                // profesor null
+            diasValidados,
+            hora,
+            cupoMaximo ?? null,
+            activo
+          )
+        );
+      }
+
       const horariosExistentes = await this.horarioRepository.find({
         //relations: ['actividad', 'profesor', 'hora']
         relations: ['profesor', 'hora']
@@ -247,23 +263,6 @@ export class HorariosService {
 
         horario.setProfesor(profesor);
       }
-/*
-      if (updateHorarioDto.dias !== undefined) {
-        let diasFormateados: string;
-
-        if (Array.isArray(updateHorarioDto.dias)) {
-          // Si viene como array ["lunes","jueves"]
-          diasFormateados = updateHorarioDto.dias.join(",");
-        } else if (typeof updateHorarioDto.dias === "string") {
-          // Si ya viene como string "lunes,jueves"
-          diasFormateados = updateHorarioDto.dias;
-        } else {
-          throw new BadRequestException("Formato inválido para días.");
-        }
-
-        horario.setDias(diasFormateados);
-      }
-*/
 
       if (updateHorarioDto.dias !== undefined) {
         const diasValidados = this.validarDias(updateHorarioDto.dias);
@@ -283,34 +282,39 @@ export class HorariosService {
 
 
       // 2 - Valido solapamientos (mismo profesor, hora y días) solo si los IDs son correctos   
-      const horariosExistentes = await this.horarioRepository.find({
-        relations: ['profesor', 'hora']
-      });
-
-      for (const h of horariosExistentes) {
-        if (h.horario_id === id) continue;      // saltar este mismo
       
-        const profIdNuevo = updateHorarioDto.profesor_id ?? h.getProfesor()?.profesor_id ?? null;
-        const profIdExistente = h.getProfesor()?.profesor_id ?? null;
+      // Si el profesor es null, no se validan solapamientos
+      if (updateHorarioDto.profesor_id !== null && updateHorarioDto.profesor_id !== undefined) {
+      
+        const horariosExistentes = await this.horarioRepository.find({
+          relations: ['profesor', 'hora']
+        });
 
-        const mismoProfesor =
-          (profIdNuevo === null && profIdExistente === null) ||
-          profIdNuevo === profIdExistente;
+        for (const h of horariosExistentes) {
+          if (h.horario_id === id) continue;      // saltar este mismo
+        
+          const profIdNuevo = updateHorarioDto.profesor_id ?? h.getProfesor()?.profesor_id ?? null;
+          const profIdExistente = h.getProfesor()?.profesor_id ?? null;
 
-        const mismaHora =
-          (updateHorarioDto.hora_id ?? h.getHora().hora_id) === h.getHora().hora_id;
+          const mismoProfesor =
+            (profIdNuevo === null && profIdExistente === null) ||
+            profIdNuevo === profIdExistente;
 
-        const diasNuevos = updateHorarioDto.dias
-          ? updateHorarioDto.dias
-            .split(',')
-            .map(d => d.trim().toLowerCase())
-            .join(',')
-          : h.getDias();
+          const mismaHora =
+            (updateHorarioDto.hora_id ?? h.getHora().hora_id) === h.getHora().hora_id;
 
-        // Valido solapamiento: mismo profesor, hora y días
-        if (mismoProfesor && mismaHora) {
-          if (this.tienenDiasEnComun(h.getDias(), diasNuevos)) throw new BadRequestException(`Ya existe un horario asignado al profesor en la misma hora y días.`);
-        }
+          const diasNuevos = updateHorarioDto.dias
+            ? updateHorarioDto.dias
+              .split(',')
+              .map(d => d.trim().toLowerCase())
+              .join(',')
+            : h.getDias();
+
+          // Valido solapamiento: mismo profesor, hora y días
+          if (mismoProfesor && mismaHora) {
+            if (this.tienenDiasEnComun(h.getDias(), diasNuevos)) throw new BadRequestException(`Ya existe un horario asignado al profesor en la misma hora y días.`);
+          }
+        }        
       }
       
       // 3 - Aplico cambios
@@ -335,6 +339,7 @@ export class HorariosService {
 
       throw new InternalServerErrorException("Ocurrió un error inesperado al modificar el horario.");
     }
+  
   }
 
   // --------------------------------------------------------------------
