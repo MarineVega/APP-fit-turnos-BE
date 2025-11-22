@@ -166,6 +166,19 @@ export class ReservasService {
             throw new InternalServerErrorException('Ocurrió un error inesperado al cancelar la reserva.');
         }
     }
+    // --------------------------------------------------------------------
+    // Verificar si una persona (cliente) tiene reservas activas
+    // --------------------------------------------------------------------
+    async tieneReservasPorPersona(personaId: number) {
+    const reservas = await this.reservaRepository.count({
+        where: {
+        cliente: { persona: { persona_id: personaId } }
+        },
+    });
+
+    return { tieneReservas: reservas > 0 };
+    }
+
 }
 
 /*

@@ -96,7 +96,6 @@ export class UsuariosService {
 
   // ---------------------------------------------
   // Buscar por email
-  // includePassword = true → incluye password
   // ---------------------------------------------
   async findByEmail(email: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
@@ -113,7 +112,6 @@ export class UsuariosService {
 
   // ---------------------------------------------
   // Buscar por username
-  // includePassword = true → incluye password
   // ---------------------------------------------
   async findByUsername(username: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
@@ -187,14 +185,59 @@ export class UsuariosService {
   }
 
   // ---------------------------------------------
-  // Eliminar usuario
+  // Eliminar usuario (CORREGIDO)
   // ---------------------------------------------
   async remove(id: number): Promise<void> {
-    const usuario = await this.findByIdWithPassword(id);
+    const usuario = await this.usuarioRepository.findOne({
+      where: { usuario_id: id },
+      relations: ['persona'],
+    });
+
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
 
+    const persona = usuario.persona;
+
+    if (!persona) {
+      throw new BadRequestException('El usuario no tiene persona asociada');
+    }
+
+    // 📌 Si es CLIENTE (tipoPersona_id = 3), validar reservas
+    if (persona.tipoPersona_id === 3) {
+      const cliente = await this.clientesService.findByPersonaId(persona.persona_id);
+
+      if (!cliente) {
+        throw new BadRequestException(
+          'El usuario es cliente pero no tiene registro en la tabla clientes',
+        );
+      }
+
+      // ⛔ VALIDACIÓN QUE FALLABA → YA ESTÁ CORREGIDA
+      const tieneReservas = await this.clientesService.clienteTieneReservas(
+        cliente.cliente_id,
+      );
+
+      if (tieneReservas) {
+        throw new BadRequestException(
+          'No se puede eliminar un cliente porque tiene reservas registradas',
+        );
+      }
+
+      // ✔ Eliminar cliente + usuario + persona
+      await this.clientesService.removeByPersonaId(persona.persona_id);
+
+      return;
+    }
+
+    // 📌 Si NO es cliente → eliminar persona y usuario
+
+    // eliminar PERSONA
+    await this.usuarioRepository.manager.delete('persona', {
+      persona_id: persona.persona_id,
+    });
+
+    // eliminar USUARIO
     await this.usuarioRepository.remove(usuario);
   }
 

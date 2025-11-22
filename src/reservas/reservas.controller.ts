@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Put, Param, Delete } from '@nestjs/common';
 import { ReservasService } from './reservas.service';
 import { CreateReservaDto } from './dto/create-reserva.dto';
-import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { UpdateReservaDto } from './dto/update-reserva.dto';  
 
 @Controller('reservas')
 export class ReservasController {
@@ -33,8 +33,16 @@ export class ReservasController {
     return this.reservasService.update(+id, updateReservaDto);
   }
 */
+
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.reservasService.delete(+id);
+  }
+   //  VERIFICAR SI UNA PERSONA TIENE RESERVAS ACTIVAS
+  //  GET /reservas/usuario/:personaId
+  // ---------------------------------------------------------
+  @Get('usuario/:personaId')
+  tieneReservasPorPersona(@Param('personaId') personaId: string) {
+    return this.reservasService.tieneReservasPorPersona(+personaId);
   }
 }
