@@ -66,8 +66,8 @@ export class ReservasService {
             // 1 - Valido existencia de los IDs
             const actividad = await this.actividadRepository.findOne({ 
                 where: { 
-                actividad_id,
-                activa: true
+                    actividad_id,
+                    activa: true
                 } 
             });
             if (!actividad) throw new NotFoundException(`Actividad con id ${actividad_id} no encontrada o está desactivada.`);
@@ -76,19 +76,26 @@ export class ReservasService {
 
             if (profesor_id) {
                 profesor = await this.profesorRepository.findOne({ 
-                where: { 
-                    profesor_id/*,
-                    activo: true*/
-                } 
+                    where: { 
+                        profesor_id,
+                        persona: { activo: true }
+                        },
+                    relations: ['persona']
                 });
 
-                //if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado o está desactivado.`);
-                if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado.`);
+                if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado o está desactivado.`);
             }
 
             // Valido existencia de cliente
-            const cliente = await this.clienteRepository.findOne({where: { cliente_id }, });        
-            if (!cliente) throw new NotFoundException(`Cliente con id ${cliente_id} no encontrado.`);
+            const cliente = await this.clienteRepository.findOne({
+                where: { 
+                    cliente_id,
+                    persona: { activo: true }
+                },
+                relations: ['persona']
+            });
+
+            if (!cliente) throw new NotFoundException(`Cliente con id ${cliente_id} no encontrado o está desactivado.`);
 
             // Valido existencia de horario
             const horario = await this.horarioRepository.findOne({ 
@@ -112,11 +119,11 @@ export class ReservasService {
             // horario ya fue obtenido arriba
             const hora_id = horario.getHora().hora_id;
 
-            const conflicto = reservasCliente.some(r =>
+            const conflicto = reservasCliente.some(r =>                
                 r.getHorario()?.getHora()?.hora_id === hora_id
             );
             
-           if (conflicto) throw new BadRequestException(`El cliente ya tiene una reserva en este mismo horario y fecha.`); 
+            if (conflicto) throw new BadRequestException(`El cliente ya tiene una reserva en este mismo horario y fecha.`); 
 
             // Creo y guardo
             const reserva = await this.reservaRepository.save(
