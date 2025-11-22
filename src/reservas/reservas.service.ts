@@ -119,11 +119,11 @@ export class ReservasService {
             // horario ya fue obtenido arriba
             const hora_id = horario.getHora().hora_id;
 
-            const conflicto = reservasCliente.some(r =>
+            const conflicto = reservasCliente.some(r =>                
                 r.getHorario()?.getHora()?.hora_id === hora_id
             );
             
-           if (conflicto) throw new BadRequestException(`El cliente ya tiene una reserva en este mismo horario y fecha.`); 
+            if (conflicto) throw new BadRequestException(`El cliente ya tiene una reserva en este mismo horario y fecha.`); 
 
             // Creo y guardo
             const reserva = await this.reservaRepository.save(
