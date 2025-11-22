@@ -134,13 +134,13 @@ export class HorariosService {
       if (profesor_id) {
         profesor = await this.profesorRepository.findOne({ 
           where: { 
-            profesor_id/*,
-            activo: true*/
-          } 
+            profesor_id,
+            persona: { activo: true }
+            },
+          relations: ['persona']
         });
 
-        //if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado o está desactivado.`);
-        if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado.`);
+        if (!profesor) throw new NotFoundException(`Profesor con id ${profesor_id} no encontrado o está desactivado.`);        
       }
 
      // if (!dias || dias.trim() === "") throw new BadRequestException("Debe seleccionar al menos un día.");
@@ -235,10 +235,14 @@ export class HorariosService {
 
         if (updateHorarioDto.profesor_id) {
           profesor = await this.profesorRepository.findOne({
-            where: { profesor_id: updateHorarioDto.profesor_id },
+            where: { 
+              profesor_id: updateHorarioDto.profesor_id,
+              persona: {activo: true}
+              },
+            relations: ['persona']
           });
 
-          if (!profesor) throw new BadRequestException(`Profesor con id ${updateHorarioDto.profesor_id} no encontrado.`);
+          if (!profesor) throw new BadRequestException(`Profesor con id ${updateHorarioDto.profesor_id} no encontrado o desactivado.`);
         }
 
         horario.setProfesor(profesor);
