@@ -28,4 +28,6 @@ export class Persona {
 
   @Column({ type: 'boolean', default: true })
   activo: boolean;
+
+
 }

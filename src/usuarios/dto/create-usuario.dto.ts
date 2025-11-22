@@ -10,66 +10,74 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// DTO interno para Persona (debe ir ARRIBA)
+// DTO de Persona
 export class PersonaDto {
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'El ID de persona debe ser un número.' })
   persona_id?: number;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'El nombre debe ser un texto.' })
   nombre?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'El apellido debe ser un texto.' })
   apellido?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'El debe ser un numero válido.' })
   documento?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'coloque un numero de telefono valido.' })
   telefono?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'El domicilio debe ser un texto.' })
   domicilio?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'La fecha de nacimiento debe tener formato ##/##/####.' })
   fecha_nac?: string;
 
-  // ÚNICO campo obligatorio
-  @IsNumber()
+  // Obligatorio: tipo de persona
+  @IsNumber({}, { message: 'El tipo de persona es obligatorio y debe ser un número.' })
   tipoPersona_id: number;
-
-  @IsOptional()
-  @IsBoolean()
+ 
+  // Opcional: activo
+  @IsBoolean({ message: 'Activo debe ser un valor booleano.' })
   activo?: boolean;
+
+
 }
 
-// DTO principal de Usuario
+// DTO de Usuario
 export class CreateUsuarioDto {
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'El ID de usuario debe ser un número.' })
   usuario_id?: number;
 
-  @IsString()
+  @IsString({ message: 'El nombre de usuario es obligatorio.' })
   usuario: string;
 
-  @IsEmail()
+  @IsEmail({}, { message: 'El email debe tener un formato válido.' })
   email: string;
 
-  @MinLength(6)
-  @IsString()
+  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres.' })
+  @IsString({ message: 'La contraseña debe ser un texto.' })
   password: string;
 
+ 
   @IsOptional()
-  @IsBoolean()
-  activo?: boolean = true;
+  @IsNumber({}, { message: 'El campo verificado debe ser un número (0 o 1).' })
+  verificado?: number;
 
-  @IsObject()
+  @IsOptional()
+  @IsString({ message: 'El token de verificación debe ser un texto.' })
+  verification_token?: string | null;
+
+  // Validación de objeto persona
+  @IsObject({ message: 'El campo persona debe ser un objeto válido.' })
   @ValidateNested()
   @Type(() => PersonaDto)
   persona: PersonaDto;
