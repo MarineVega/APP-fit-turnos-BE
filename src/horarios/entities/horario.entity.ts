@@ -15,7 +15,7 @@ export class Horario {
     
     @ManyToOne(() => Profesor, { eager: false, nullable: true })
     @JoinColumn({ name: 'profesor_id' })
-        private profesor: Profesor | null;
+        public profesor: Profesor | null;
 
     @Column({ name: 'dias_id', length: 100, nullable: false })
         private dias: string;
