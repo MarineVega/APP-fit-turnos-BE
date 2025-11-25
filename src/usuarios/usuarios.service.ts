@@ -44,7 +44,7 @@ export class UsuariosService {
     const nuevoUsuario = this.usuarioRepository.create({
       usuario: createUsuarioDto.usuario,
       email: createUsuarioDto.email,
-      password: createUsuarioDto.password, // ya hasheada
+      password: createUsuarioDto.password,
 
       verificado: createUsuarioDto.verificado ?? 0,
       verification_token: createUsuarioDto.verification_token ?? null,
@@ -54,9 +54,15 @@ export class UsuariosService {
 
     const saved = await this.usuarioRepository.save(nuevoUsuario);
 
-    // Crear cliente si la persona es tipo 3
+    // Si se crea como cliente, generar entrada en clientes
     if (saved.persona && saved.persona.tipoPersona_id === 3) {
-      await this.clientesService.createFromPersona(saved.persona.persona_id);
+      const existe = await this.clientesService.findByPersonaId(
+        saved.persona.persona_id,
+      );
+
+      if (!existe) {
+        await this.clientesService.createFromPersona(saved.persona.persona_id);
+      }
     }
 
     const { password, ...rest } = saved as any;
@@ -77,10 +83,10 @@ export class UsuariosService {
     });
   }
 
-  // ---------------------------------------------
+   // ---------------------------------------------
   // Obtener uno por id (sin password)
   // ---------------------------------------------
-  async findOne(id: number): Promise<Usuario> {
+  async findOne(id: number): Promise<any> {
     const usuario = await this.usuarioRepository.findOne({
       where: { usuario_id: id },
       relations: ['persona'],
@@ -90,13 +96,41 @@ export class UsuariosService {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
 
+    // ---------------------------------------------------------
+    // SABER SI EL USUARIO ES CLIENTE Y SI TIENE RESERVAS
+    // ---------------------------------------------------------
+    let tieneReservas = false;
+    let cliente_id: number | null = null;
+
+    if (usuario.persona?.tipoPersona_id === 3) {
+      const cliente = await this.clientesService.findByPersonaId(
+        usuario.persona.persona_id,
+      );
+
+      if (cliente) {
+        cliente_id = cliente.cliente_id;
+
+        tieneReservas = await this.clientesService.clienteTieneReservas(
+          cliente.cliente_id,
+        );
+      }
+    }
+
+    // ---------------------------------------------------------
+    // ARMAR RESPUESTA  PARA EL FRONT
+    // ---------------------------------------------------------
     const { password, ...rest } = usuario as any;
-    return rest;
+
+    return {
+      ...rest,
+      cliente_id,
+      tieneReservas,
+    };
   }
+
 
   // ---------------------------------------------
   // Buscar por email
-  // includePassword = true → incluye password
   // ---------------------------------------------
   async findByEmail(email: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
@@ -113,7 +147,6 @@ export class UsuariosService {
 
   // ---------------------------------------------
   // Buscar por username
-  // includePassword = true → incluye password
   // ---------------------------------------------
   async findByUsername(username: string, includePassword = false): Promise<Usuario | null> {
     const user = await this.usuarioRepository.findOne({
@@ -161,6 +194,51 @@ export class UsuariosService {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
 
+    // ---------------------------------------------------------
+    // VALIDACIÓN CLIENTE (3) → ADMIN (1)
+    // NO PERMITIR SI TIENE RESERVAS
+    // ---------------------------------------------------------
+    if (
+      usuario.persona.tipoPersona_id === 3 && // Es cliente ahora
+      updateDto.persona?.tipoPersona_id === 1 // Quiere pasar a admin
+    ) {
+      const cliente = await this.clientesService.findByPersonaId(
+        usuario.persona.persona_id,
+      );
+
+      if (cliente) {
+        const tieneReservas = await this.clientesService.clienteTieneReservas(
+          cliente.cliente_id,
+        );
+
+        if (tieneReservas) {
+          throw new BadRequestException(
+            'No se puede cambiar a ADMIN: el usuario es CLIENTE y tiene reservas registradas.',
+          );
+        }
+      }
+    }
+
+    // ---------------------------------------------------------
+    // CAMBIO → TIPO 3 (CLIENTE)
+    // Si no tiene registro en clientes, crearlo
+    // ---------------------------------------------------------
+    if (
+      usuario.persona.tipoPersona_id !== 3 && // Antes no era cliente
+      updateDto.persona?.tipoPersona_id === 3 // Ahora sí
+    ) {
+      const existe = await this.clientesService.findByPersonaId(
+        usuario.persona.persona_id,
+      );
+
+      if (!existe) {
+        await this.clientesService.createFromPersona(usuario.persona.persona_id);
+      }
+    }
+
+    // ---------------------------------------------
+    // Actualizar campos simples
+    // ---------------------------------------------
     if (updateDto.usuario !== undefined) usuario.usuario = updateDto.usuario;
     if (updateDto.email !== undefined) usuario.email = updateDto.email;
 
@@ -190,10 +268,47 @@ export class UsuariosService {
   // Eliminar usuario
   // ---------------------------------------------
   async remove(id: number): Promise<void> {
-    const usuario = await this.findByIdWithPassword(id);
+    const usuario = await this.usuarioRepository.findOne({
+      where: { usuario_id: id },
+      relations: ['persona'],
+    });
+
     if (!usuario) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
+
+    const persona = usuario.persona;
+
+    if (!persona) {
+      throw new BadRequestException('El usuario no tiene persona asociada');
+    }
+
+    if (persona.tipoPersona_id === 3) {
+      const cliente = await this.clientesService.findByPersonaId(persona.persona_id);
+
+      if (!cliente) {
+        throw new BadRequestException(
+          'El usuario es cliente pero no tiene registro en la tabla clientes',
+        );
+      }
+
+      const tieneReservas = await this.clientesService.clienteTieneReservas(
+        cliente.cliente_id,
+      );
+
+      if (tieneReservas) {
+        throw new BadRequestException(
+          'No se puede eliminar un cliente porque tiene reservas registradas',
+        );
+      }
+
+      await this.clientesService.removeByPersonaId(persona.persona_id);
+      return;
+    }
+
+    await this.usuarioRepository.manager.delete('persona', {
+      persona_id: persona.persona_id,
+    });
 
     await this.usuarioRepository.remove(usuario);
   }
@@ -219,7 +334,7 @@ export class UsuariosService {
   }
 
   // ---------------------------------------------
-  // Actualizar contraseña (usado desde AuthService)
+  // Actualizar contraseña (AuthService)
   // ---------------------------------------------
   async updatePassword(id: number, hashedPassword: string) {
     const usuario = await this.findByIdWithPassword(id);

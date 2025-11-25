@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from 'src/mail/mail.module';
+import { ClientesModule } from '../clientes/clientes.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MailModule } from 'src/mail/mail.module';
     UsuariosModule, // 🔹 Importante para usar UsuariosService
     PassportModule,
     MailModule,
+    ClientesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

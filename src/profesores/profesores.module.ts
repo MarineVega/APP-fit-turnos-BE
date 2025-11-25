@@ -4,10 +4,11 @@ import { ProfesoresService } from './profesores.service';
 import { ProfesoresController } from './profesores.controller';
 import { Profesor } from './entities/profesor.entity';
 import { Persona } from '../usuarios/entities/persona.entity';
-
+import { Horario } from '../horarios/entities/horario.entity';
 @Module({
-  // Incluimos Profesor y Persona porque al crear un profesor también se crea o actualiza una Persona
-  imports: [TypeOrmModule.forFeature([Profesor, Persona])],
+  imports: [
+    TypeOrmModule.forFeature([Profesor, Persona, Horario]),
+  ],
   controllers: [ProfesoresController],
   providers: [ProfesoresService],
 })
