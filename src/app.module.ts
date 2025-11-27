@@ -43,6 +43,9 @@ import { ClientesModule } from './clientes/clientes.module';
           database: configService.get<string>('DB_NAME'),
           entities: ["dist/**/**.entity{.ts,.js}"],
           synchronize: false, // ⚠ esto debe quedar en false en producción
+          extra: {
+            connectionLimit: 4, // Establece un límite de seguridad menor al límite de Clever Cloud (5)
+          },
      // }),
         };
       },
