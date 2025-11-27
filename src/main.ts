@@ -14,7 +14,10 @@ async function bootstrap() {
 
   // Habilitar CORS
   app.enableCors({
-    origin: 'http://localhost:5173',      // el puerto donde corre nuestro React
+    origin: [
+          "https://app-fit-turnos-be.onrender.com",
+          "http://localhost:5173"                   // el puerto donde corre nuestro React
+            ],         
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
