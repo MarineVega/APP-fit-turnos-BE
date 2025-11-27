@@ -22,16 +22,30 @@ import { ClientesModule } from './clientes/clientes.module';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get<string>('DB_HOST'),
-        port: Number(configService.get<string>('DB_PORT')),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        entities: ["dist/**/**.entity{.ts,.js}"],
-        synchronize: false, // ⚠ esto debe quedar en false en producción
-      }),
+     // useFactory: (configService: ConfigService) => ({
+      
+      useFactory: (configService: ConfigService) => {
+        // LOG para saber que BD se está usando
+        console.log('🟢 DATABASE CONFIG:');
+        console.log({
+          host: configService.get('DB_HOST'),
+          port: configService.get('DB_PORT'),
+          user: configService.get('DB_USER'),
+          database: configService.get('DB_NAME'),
+        });
+
+        return {
+          type: 'mysql',
+          host: configService.get<string>('DB_HOST'),
+          port: Number(configService.get<string>('DB_PORT')),
+          username: configService.get<string>('DB_USER'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_NAME'),
+          entities: ["dist/**/**.entity{.ts,.js}"],
+          synchronize: false, // ⚠ esto debe quedar en false en producción
+     // }),
+        };
+      },
       inject: [ConfigService],
     }),
     ServeStaticModule.forRoot({
