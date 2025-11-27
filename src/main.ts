@@ -14,16 +14,13 @@ async function bootstrap() {
 
   // Habilitar CORS
   app.enableCors({    
-    origin: '*',
-
-    /*
+    //origin: '*',
     origin: [
           "https://app-fit-turnos-be.onrender.com",
           "http://localhost:5173",                   // el puerto donde corre nuestro React
           "https://fit-turnos.web.app"          // URL de firebase, nuestro front end
           
-            ],         
-            */
+          ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
 
