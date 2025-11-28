@@ -5,13 +5,13 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
-  private readonly mailService: MailService;
+ 
 
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get('MAIL_HOST') || 'smtp.gmail.com',
+      host: this.configService.get('MAIL_HOST') || 'smtp-relay.brevo.com',
       port: parseInt(this.configService.get('MAIL_PORT') || '587'),
-      secure: false, // Gmail 
+      secure: false, // Brevo usa STARTTLS en puerto 587
       auth: {
         user: this.configService.get('MAIL_USER') || '',
         pass: this.configService.get('MAIL_PASS') || '',
