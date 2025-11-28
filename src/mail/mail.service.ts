@@ -10,7 +10,7 @@ export class MailService {
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get('MAIL_HOST') || 'smtp-relay.brevo.com',
-      port: parseInt(this.configService.get('MAIL_PORT') || '587'),
+      port: parseInt(this.configService.get('MAIL_PORT') || '2525'),
       secure: false, // Brevo usa STARTTLS en puerto 587
       auth: {
         user: this.configService.get('MAIL_USER') || '',
